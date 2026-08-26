@@ -1,0 +1,16 @@
+export const siteConfig = {
+  name: "Gestion Locative",
+  shortName: "GL",
+  description:
+    "Une plateforme fiable pour piloter les biens, contrats, loyers et encaissements.",
+  locale: "fr-CD",
+  timezone: "Africa/Lubumbashi",
+  currencies: ["USD", "CDF"],
+  url: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+  repositoryUrl: "https://github.com/LabuluDanny9/Gestion_Locative",
+  links: {
+    github: "https://github.com/LabuluDanny9/Gestion_Locative",
+  },
+} as const;
+
+export type AppCurrency = (typeof siteConfig.currencies)[number];
