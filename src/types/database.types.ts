@@ -923,6 +923,24 @@ export type Database = {
           },
         ]
       }
+      role_permissions: {
+        Row: {
+          created_at: string
+          permission: Database["public"]["Enums"]["app_permission"]
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          created_at?: string
+          permission: Database["public"]["Enums"]["app_permission"]
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          created_at?: string
+          permission?: Database["public"]["Enums"]["app_permission"]
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
+      }
       organizations: {
         Row: {
           archived_at: string | null
@@ -1748,6 +1766,30 @@ export type Database = {
     }
     Enums: {
       allocation_type: "automatic" | "manual"
+      app_permission:
+        | "organization.read"
+        | "organization.update"
+        | "members.read"
+        | "members.manage"
+        | "portfolio.read"
+        | "portfolio.manage"
+        | "tenants.read"
+        | "tenants.manage"
+        | "leases.read"
+        | "leases.manage"
+        | "finance.read"
+        | "finance.manage"
+        | "payments.create"
+        | "notifications.read"
+        | "notifications.manage"
+        | "documents.read"
+        | "documents.manage"
+        | "settings.read"
+        | "settings.manage"
+        | "reports.read"
+        | "audit.read"
+        | "portal.read"
+        | "maintenance.create"
       app_role: "super_admin" | "owner" | "manager" | "cashier" | "tenant"
       billing_frequency:
         | "monthly"
@@ -1976,6 +2018,31 @@ export const Constants = {
   public: {
     Enums: {
       allocation_type: ["automatic", "manual"],
+      app_permission: [
+        "organization.read",
+        "organization.update",
+        "members.read",
+        "members.manage",
+        "portfolio.read",
+        "portfolio.manage",
+        "tenants.read",
+        "tenants.manage",
+        "leases.read",
+        "leases.manage",
+        "finance.read",
+        "finance.manage",
+        "payments.create",
+        "notifications.read",
+        "notifications.manage",
+        "documents.read",
+        "documents.manage",
+        "settings.read",
+        "settings.manage",
+        "reports.read",
+        "audit.read",
+        "portal.read",
+        "maintenance.create",
+      ],
       app_role: ["super_admin", "owner", "manager", "cashier", "tenant"],
       billing_frequency: [
         "monthly",

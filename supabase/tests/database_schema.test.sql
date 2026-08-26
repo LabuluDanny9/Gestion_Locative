@@ -1,19 +1,19 @@
 begin;
 
-select extensions.plan(10);
+select extensions.plan(11);
 
 select extensions.has_table('public', 'organizations', 'organizations table exists');
 select extensions.has_table('public', 'payments', 'payments table exists');
 select extensions.is(
   (select count(*) from pg_class join pg_namespace on pg_namespace.oid = pg_class.relnamespace
    where pg_namespace.nspname = 'public' and pg_class.relkind = 'r' and pg_class.relrowsecurity),
-  26::bigint,
+  27::bigint,
   'RLS is enabled on every application table'
 );
 select extensions.is(
   (select count(*) from pg_class join pg_namespace on pg_namespace.oid = pg_class.relnamespace
    where pg_namespace.nspname = 'public' and pg_class.relkind = 'r' and pg_class.relforcerowsecurity),
-  26::bigint,
+  27::bigint,
   'RLS is forced on every application table'
 );
 select extensions.ok(
@@ -32,6 +32,7 @@ select extensions.is(
   5::bigint,
   'all application storage buckets are private'
 );
+select extensions.has_table('public', 'role_permissions', 'RBAC permission matrix exists');
 
 select * from extensions.finish();
 rollback;
