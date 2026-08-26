@@ -65,7 +65,7 @@ export default function HomePage() {
           <BrandMark />
           <div className="flex items-center gap-2">
             <Badge className="hidden rounded-full sm:inline-flex" variant="secondary">
-              Phase 1 · Fondation
+              Phase 2 · Données
             </Badge>
             <ThemeToggle />
           </div>
@@ -82,8 +82,8 @@ export default function HomePage() {
             Le socle d’une gestion locative fiable et moderne.
           </h1>
           <p className="mt-6 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
-            {siteConfig.description} La première phase installe une base technique,
-            visuelle et testable, sans inventer de données métier.
+            {siteConfig.description} Le socle associe maintenant une base technique,
+            visuelle et un schéma de données sécurisé.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Button asChild size="lg">
@@ -125,10 +125,10 @@ export default function HomePage() {
             <Separator />
             <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/40 px-4 py-3">
               <div>
-                <p className="text-sm font-medium">Données métier</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">Supabase et authentification</p>
+                <p className="text-sm font-medium">Schéma Supabase sécurisé</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">26 tables, RLS fermé par défaut</p>
               </div>
-              <Badge className="rounded-full" variant="outline">Phase 2</Badge>
+              <Badge className="rounded-full" variant="outline">Prêt</Badge>
             </div>
           </CardContent>
         </Card>
@@ -200,7 +200,7 @@ export default function HomePage() {
       <footer className="border-t">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-8">
           <BrandMark compact />
-          <p>Fondation technique · Phase 1</p>
+          <p>Fondation et données · Phase 2</p>
         </div>
       </footer>
     </main>

@@ -4,7 +4,7 @@ Application web professionnelle de gestion locative pour piloter progressivement
 
 ## État du projet
 
-La Phase 1 fournit le socle technique et visuel. Aucune donnée métier n’est simulée et aucune migration de base de données n’est exécutée à ce stade.
+La Phase 2 fournit le socle technique, le schéma PostgreSQL multi-organisations, les clients Supabase SSR et les types TypeScript générés. Le seed de démonstration reste réservé au développement et n’est pas injecté automatiquement dans le projet hébergé.
 
 ## Stack
 
@@ -14,6 +14,7 @@ La Phase 1 fournit le socle technique et visuel. Aucune donnée métier n’est 
 - Geist et Lucide Icons
 - Zod pour la validation de configuration
 - Vitest et Testing Library pour les tests unitaires
+- Supabase PostgreSQL 17, Auth, Storage et clients SSR
 
 ## Installation
 
@@ -31,7 +32,7 @@ Le projet sera disponible sur `http://localhost:3000`.
 
 Copier `.env.example` vers `.env.local`, puis compléter les valeurs dans un gestionnaire de secrets. Seules les variables préfixées par `NEXT_PUBLIC_` peuvent être intégrées au code envoyé au navigateur. `SUPABASE_SECRET_KEY` doit rester exclusivement côté serveur.
 
-La connexion Supabase et l’authentification seront implémentées en Phase 2.
+Les clients Supabase utilisent une clé publishable. Les politiques RBAC et les parcours d’authentification seront implémentés en Phase 3 ; jusque-là, toutes les tables exposées restent fermées par RLS et sans droits `anon`/`authenticated`.
 
 ## Scripts
 
@@ -40,6 +41,9 @@ pnpm lint       # Analyse ESLint
 pnpm typecheck  # Vérification TypeScript
 pnpm test       # Tests unitaires
 pnpm build      # Build de production
+pnpm db:reset   # Rejoue migrations et seed sur Supabase local
+pnpm db:test    # Exécute les tests pgTAP locaux
+pnpm db:types   # Régénère les types depuis le projet hébergé
 ```
 
 ## Architecture
@@ -60,6 +64,12 @@ tests/
 ├── integration/
 └── e2e/
 ```
+
+## Base de données
+
+Les migrations versionnées sont dans `supabase/migrations`. Elles créent 26 tables métier, deux vues calculées, cinq buckets privés, les contraintes d’intégrité, les index de clés étrangères et un verrou empêchant la suppression physique des écritures financières.
+
+Le fichier `supabase/seed.sql` contient uniquement un portefeuille fictif marqué `is_demo`. Son nettoyage est prévu par `supabase/seed/remove_demo_data.sql`.
 
 ## Déploiement
 
