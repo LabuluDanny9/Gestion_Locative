@@ -47,7 +47,7 @@ export default async function SecureSpacePage({
   }>;
 
   return (
-    <AccountShell email={user.email}>
+    <AccountShell displayName={profileResult.data?.display_name ?? undefined} email={user.email}>
       <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <Badge className="mb-3 rounded-full" variant="secondary">Phase 3 · Accès sécurisé</Badge>

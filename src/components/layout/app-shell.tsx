@@ -1,0 +1,357 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  Bell,
+  Building2,
+  ChevronDown,
+  ChevronLeft,
+  CircleHelp,
+  FileText,
+  House,
+  LogOut,
+  Menu,
+  Plus,
+  ReceiptText,
+  Search,
+  UserRound,
+  Users,
+  WalletCards,
+} from "lucide-react";
+
+import { BrandMark } from "@/components/brand/brand-mark";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { logoutAction } from "@/features/auth/actions";
+import { cn } from "@/lib/utils";
+
+import { appNavigation, getCurrentNavigationItem, type NavigationItem } from "./app-navigation";
+
+type AppShellProps = {
+  children: React.ReactNode;
+  email?: string;
+  displayName?: string;
+  preview?: boolean;
+};
+
+function getInitials(displayName?: string, email?: string) {
+  const source = displayName?.trim() || email?.split("@")[0] || "GL";
+  return source
+    .split(/[\s._-]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+}
+
+function NavigationLink({ item, active, collapsed, forceLabels = false, onNavigate }: {
+  item: NavigationItem;
+  active: boolean;
+  collapsed: boolean;
+  forceLabels?: boolean;
+  onNavigate?: () => void;
+}) {
+  const Icon = item.icon;
+  const content = (
+    <>
+      <Icon aria-hidden="true" className="size-[1.1rem] shrink-0" strokeWidth={1.9} />
+      {!collapsed && <span className={cn("truncate", !forceLabels && "hidden xl:block")}>{item.label}</span>}
+      {!collapsed && !item.enabled && (
+        <span className={cn(
+          "ml-auto rounded-full bg-white/8 px-1.5 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400",
+          !forceLabels && "hidden xl:inline",
+        )}>
+          bientôt
+        </span>
+      )}
+    </>
+  );
+
+  const className = cn(
+    "relative flex h-9 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors duration-200",
+    collapsed && "justify-center px-0",
+    active
+      ? "bg-sidebar-accent text-white before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-sidebar-primary"
+      : "text-slate-400 hover:bg-sidebar-accent/70 hover:text-white",
+    !item.enabled && "cursor-not-allowed opacity-55 hover:bg-transparent hover:text-slate-400",
+  );
+
+  const element = item.enabled && item.href ? (
+    <Link className={className} href={item.href} onClick={onNavigate}>{content}</Link>
+  ) : (
+    <button aria-label={`${item.label} — module bientôt disponible`} className={className} disabled type="button">
+      {content}
+    </button>
+  );
+
+  if (!collapsed) return element;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild><span className="block">{element}</span></TooltipTrigger>
+      <TooltipContent side="right">{item.label}{!item.enabled && " · bientôt"}</TooltipContent>
+    </Tooltip>
+  );
+}
+
+function SidebarNavigation({ pathname, collapsed, forceLabels = false, onNavigate, preview = false }: {
+  pathname: string;
+  collapsed: boolean;
+  forceLabels?: boolean;
+  onNavigate?: () => void;
+  preview?: boolean;
+}) {
+  return (
+    <nav aria-label="Navigation principale" className="flex-1 space-y-5 overflow-y-auto px-3 py-5">
+      {appNavigation.map((group) => (
+        <div key={group.label}>
+          {!collapsed ? (
+            <p className={cn(
+              "mb-2 px-3 text-[0.65rem] font-semibold uppercase tracking-[0.17em] text-slate-500",
+              !forceLabels && "hidden xl:block",
+            )}>
+              {group.label}
+            </p>
+          ) : (
+            <div className="mx-auto mb-2 h-px w-6 bg-white/10 first:hidden" />
+          )}
+          <div className="space-y-1">
+            {group.items.map((item) => (
+              <NavigationLink
+                active={preview ? item.href === "/espace" : Boolean(item.href && (pathname === item.href || pathname.startsWith(`${item.href}/`)))}
+                collapsed={collapsed}
+                forceLabels={forceLabels}
+                item={preview && item.href === "/espace"
+                  ? { ...item, href: "/design-system/shell" }
+                  : preview && item.href === "/profil"
+                    ? { ...item, href: "/design-system" }
+                    : item}
+                key={item.label}
+                onNavigate={onNavigate}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+    </nav>
+  );
+}
+
+function NotificationMenu() {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button aria-label="Ouvrir les notifications" className="relative" size="icon" variant="ghost">
+          <Bell aria-hidden="true" />
+          <span className="absolute top-1.5 right-1.5 size-1.5 rounded-full bg-brand-blue ring-2 ring-background" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-80 p-2">
+        <DropdownMenuLabel className="px-2 py-2 text-sm text-foreground">Notifications</DropdownMenuLabel>
+        <div className="rounded-lg border border-dashed bg-muted/30 px-5 py-7 text-center">
+          <Bell aria-hidden="true" className="mx-auto size-5 text-muted-foreground" />
+          <p className="mt-3 text-sm font-medium">Tout est calme</p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">Les alertes métier apparaîtront ici lorsque les modules seront activés.</p>
+        </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function CreateMenu() {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button className="bg-brand-blue text-white hover:bg-blue-700" size="lg">
+          <Plus aria-hidden="true" />
+          <span className="hidden sm:inline">Nouveau</span>
+          <ChevronDown aria-hidden="true" className="hidden size-3.5 sm:block" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-60">
+        <DropdownMenuLabel>Création rapide</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem disabled><Building2 />Propriété <Badge className="ml-auto" variant="secondary">bientôt</Badge></DropdownMenuItem>
+        <DropdownMenuItem disabled><House />Logement</DropdownMenuItem>
+        <DropdownMenuItem disabled><Users />Locataire</DropdownMenuItem>
+        <DropdownMenuItem disabled><FileText />Contrat</DropdownMenuItem>
+        <DropdownMenuItem disabled><WalletCards />Paiement</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function UserMenu({ email, displayName, preview = false }: { email?: string; displayName?: string; preview?: boolean }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button className="h-10 gap-2 px-1.5 sm:pr-2" variant="ghost">
+          <Avatar>
+            <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
+              {getInitials(displayName, email)}
+            </AvatarFallback>
+          </Avatar>
+          <span className="hidden max-w-32 truncate text-left text-sm font-medium lg:block">{displayName || "Mon compte"}</span>
+          <ChevronDown aria-hidden="true" className="hidden size-3.5 text-muted-foreground lg:block" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-64">
+        <DropdownMenuLabel className="px-2 py-2">
+          <span className="block truncate text-sm text-foreground">{displayName || "Mon compte"}</span>
+          <span className="mt-0.5 block truncate text-xs font-normal text-muted-foreground">{email}</span>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild><Link href={preview ? "/design-system" : "/profil"}><UserRound />{preview ? "Retour au design system" : "Mon profil"}</Link></DropdownMenuItem>
+        {!preview && (
+          <>
+            <DropdownMenuSeparator />
+            <form action={logoutAction}>
+              <DropdownMenuItem asChild variant="destructive">
+                <button className="w-full" type="submit"><LogOut />Se déconnecter</button>
+              </DropdownMenuItem>
+            </form>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function HelpMenu() {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button aria-label="Ouvrir l’aide" size="icon" variant="ghost"><CircleHelp aria-hidden="true" /></Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-60">
+        <DropdownMenuLabel>Aide et références</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild><Link href="/design-system"><FileText />Design system</Link></DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <a href="https://github.com/LabuluDanny9/Gestion_Locative" rel="noreferrer" target="_blank"><CircleHelp />Dépôt du projet</a>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+export function AppShell({ children, email, displayName, preview = false }: AppShellProps) {
+  const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const currentItem = getCurrentNavigationItem(pathname);
+
+  return (
+    <div className="min-h-screen bg-background">
+      <aside className={cn(
+        "fixed inset-y-0 left-0 z-40 hidden w-20 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 md:flex xl:w-68",
+        collapsed && "xl:w-20",
+      )}>
+        <div className="flex h-18 items-center border-b border-sidebar-border px-5">
+          <Link href={preview ? "/design-system/shell" : "/espace"} aria-label="Retour au dashboard">
+            <BrandMark className="[&>span:last-child]:hidden xl:[&>span:last-child]:flex" compact={collapsed} inverse />
+          </Link>
+        </div>
+        <SidebarNavigation collapsed={collapsed} pathname={pathname} preview={preview} />
+        <div className="border-t border-sidebar-border p-3">
+          <Button
+            aria-label={collapsed ? "Déployer la barre latérale" : "Réduire la barre latérale"}
+            className="hidden w-full justify-center text-slate-400 hover:bg-sidebar-accent hover:text-white xl:flex"
+            onClick={() => setCollapsed((value) => !value)}
+            variant="ghost"
+          >
+            <ChevronLeft aria-hidden="true" className={cn("transition-transform", collapsed && "rotate-180")} />
+            {!collapsed && <span>Réduire</span>}
+          </Button>
+        </div>
+      </aside>
+
+      <div className={cn("min-h-screen transition-[padding] duration-200 md:pl-20 xl:pl-68", collapsed && "xl:pl-20")}>
+        <header className="sticky top-0 z-30 flex h-18 items-center gap-3 border-b bg-background/90 px-4 backdrop-blur-xl sm:px-6">
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger asChild>
+              <Button aria-label="Ouvrir la navigation" className="md:hidden" size="icon" variant="outline"><Menu /></Button>
+            </SheetTrigger>
+            <SheetContent className="data-[side=left]:w-[18rem] gap-0 border-sidebar-border bg-sidebar p-0 text-sidebar-foreground" side="left">
+              <SheetHeader className="border-b border-sidebar-border px-5 py-4 text-left">
+                <SheetTitle><BrandMark inverse /></SheetTitle>
+                <SheetDescription className="sr-only">Navigation principale de Gestion locative</SheetDescription>
+              </SheetHeader>
+              <SidebarNavigation collapsed={false} forceLabels onNavigate={() => setMobileOpen(false)} pathname={pathname} preview={preview} />
+            </SheetContent>
+          </Sheet>
+
+          <div className="hidden min-w-28 md:block xl:min-w-36">
+            <p className="text-xs text-muted-foreground">Espace de gestion</p>
+            <p className="truncate text-sm font-semibold">{currentItem?.label ?? "Gestion locative"}</p>
+          </div>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="relative hidden max-w-xl flex-1 md:block">
+                <Search aria-hidden="true" className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  aria-label="Recherche globale — disponible avec les modules métier"
+                  className="h-10 w-full cursor-not-allowed rounded-xl border bg-muted/45 pr-16 pl-9 text-sm outline-none placeholder:text-muted-foreground"
+                  disabled
+                  placeholder="Rechercher un locataire, logement, reçu..."
+                  type="search"
+                />
+                <kbd className="absolute top-1/2 right-3 -translate-y-1/2 rounded-md border bg-background px-1.5 py-0.5 text-[0.65rem] text-muted-foreground">⌘ K</kbd>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>La recherche sera activée avec les modules métier.</TooltipContent>
+          </Tooltip>
+
+          <div className="ml-auto flex items-center gap-0.5 sm:gap-1">
+            <CreateMenu />
+            <NotificationMenu />
+            <HelpMenu />
+            <ThemeToggle />
+            <UserMenu displayName={displayName} email={email} preview={preview} />
+          </div>
+        </header>
+
+        <main className="px-4 py-6 pb-24 sm:px-6 sm:py-8 md:pb-8 xl:px-8">
+          <div className="mx-auto max-w-[96rem]">{children}</div>
+        </main>
+      </div>
+
+      <nav aria-label="Raccourcis mobiles" className="fixed inset-x-0 bottom-0 z-30 grid h-16 grid-cols-4 border-t bg-background/95 px-2 backdrop-blur-xl md:hidden">
+        <Link className={cn("flex flex-col items-center justify-center gap-1 text-[0.65rem] font-medium", pathname === "/espace" || preview ? "text-brand-blue" : "text-muted-foreground")} href={preview ? "/design-system/shell" : "/espace"}>
+          <House aria-hidden="true" className="size-4.5" />Accueil
+        </Link>
+        <button aria-label="Propriétés — module bientôt disponible" className="flex cursor-not-allowed flex-col items-center justify-center gap-1 text-[0.65rem] font-medium text-muted-foreground opacity-55" disabled type="button">
+          <Building2 aria-hidden="true" className="size-4.5" />Propriétés
+        </button>
+        <button aria-label="Paiements — module bientôt disponible" className="flex cursor-not-allowed flex-col items-center justify-center gap-1 text-[0.65rem] font-medium text-muted-foreground opacity-55" disabled type="button">
+          <ReceiptText aria-hidden="true" className="size-4.5" />Paiements
+        </button>
+        <Link className={cn("flex flex-col items-center justify-center gap-1 text-[0.65rem] font-medium", pathname === "/profil" ? "text-brand-blue" : "text-muted-foreground")} href={preview ? "/design-system" : "/profil"}>
+          <UserRound aria-hidden="true" className="size-4.5" />Profil
+        </Link>
+      </nav>
+    </div>
+  );
+}

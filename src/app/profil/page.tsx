@@ -18,7 +18,7 @@ export default async function ProfilePage() {
     .maybeSingle();
 
   return (
-    <AccountShell email={user.email}>
+    <AccountShell displayName={profile?.display_name ?? undefined} email={user.email}>
       <div className="mx-auto max-w-2xl">
         <div className="mb-6">
           <h1 className="font-heading text-3xl font-semibold tracking-tight">Mon profil</h1>
