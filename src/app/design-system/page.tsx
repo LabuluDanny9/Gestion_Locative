@@ -94,7 +94,7 @@ export default function DesignSystemPage() {
           <div className="flex items-center gap-2">
             <Badge className="hidden sm:inline-flex" variant="secondary">Référence interne · v1</Badge>
             <ThemeToggle />
-            <Button asChild size="sm"><Link href="/design-system/shell">Voir le shell <ArrowRight /></Link></Button>
+            <Button asChild size="sm"><Link href="/design-system/dashboard">Voir le dashboard <ArrowRight /></Link></Button>
           </div>
         </div>
       </header>

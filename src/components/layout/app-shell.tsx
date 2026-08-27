@@ -53,6 +53,7 @@ type AppShellProps = {
   email?: string;
   displayName?: string;
   preview?: boolean;
+  previewHomeHref?: string;
 };
 
 function getInitials(displayName?: string, email?: string) {
@@ -115,12 +116,13 @@ function NavigationLink({ item, active, collapsed, forceLabels = false, onNaviga
   );
 }
 
-function SidebarNavigation({ pathname, collapsed, forceLabels = false, onNavigate, preview = false }: {
+function SidebarNavigation({ pathname, collapsed, forceLabels = false, onNavigate, preview = false, previewHomeHref = "/design-system/shell" }: {
   pathname: string;
   collapsed: boolean;
   forceLabels?: boolean;
   onNavigate?: () => void;
   preview?: boolean;
+  previewHomeHref?: string;
 }) {
   return (
     <nav aria-label="Navigation principale" className="flex-1 space-y-5 overflow-y-auto px-3 py-5">
@@ -143,7 +145,7 @@ function SidebarNavigation({ pathname, collapsed, forceLabels = false, onNavigat
                 collapsed={collapsed}
                 forceLabels={forceLabels}
                 item={preview && item.href === "/espace"
-                  ? { ...item, href: "/design-system/shell" }
+                  ? { ...item, href: previewHomeHref }
                   : preview && item.href === "/profil"
                     ? { ...item, href: "/design-system" }
                     : item}
@@ -256,7 +258,7 @@ function HelpMenu() {
   );
 }
 
-export function AppShell({ children, email, displayName, preview = false }: AppShellProps) {
+export function AppShell({ children, email, displayName, preview = false, previewHomeHref = "/design-system/shell" }: AppShellProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -269,11 +271,11 @@ export function AppShell({ children, email, displayName, preview = false }: AppS
         collapsed && "xl:w-20",
       )}>
         <div className="flex h-18 items-center border-b border-sidebar-border px-5">
-          <Link href={preview ? "/design-system/shell" : "/espace"} aria-label="Retour au dashboard">
+          <Link href={preview ? previewHomeHref : "/espace"} aria-label="Retour au dashboard">
             <BrandMark className="[&>span:last-child]:hidden xl:[&>span:last-child]:flex" compact={collapsed} inverse />
           </Link>
         </div>
-        <SidebarNavigation collapsed={collapsed} pathname={pathname} preview={preview} />
+        <SidebarNavigation collapsed={collapsed} pathname={pathname} preview={preview} previewHomeHref={previewHomeHref} />
         <div className="border-t border-sidebar-border p-3">
           <Button
             aria-label={collapsed ? "Déployer la barre latérale" : "Réduire la barre latérale"}
@@ -298,13 +300,13 @@ export function AppShell({ children, email, displayName, preview = false }: AppS
                 <SheetTitle><BrandMark inverse /></SheetTitle>
                 <SheetDescription className="sr-only">Navigation principale de Gestion locative</SheetDescription>
               </SheetHeader>
-              <SidebarNavigation collapsed={false} forceLabels onNavigate={() => setMobileOpen(false)} pathname={pathname} preview={preview} />
+              <SidebarNavigation collapsed={false} forceLabels onNavigate={() => setMobileOpen(false)} pathname={pathname} preview={preview} previewHomeHref={previewHomeHref} />
             </SheetContent>
           </Sheet>
 
           <div className="hidden min-w-28 md:block xl:min-w-36">
             <p className="text-xs text-muted-foreground">Espace de gestion</p>
-            <p className="truncate text-sm font-semibold">{currentItem?.label ?? "Gestion locative"}</p>
+            <p className="truncate text-sm font-semibold">{currentItem?.label ?? (preview ? "Dashboard" : "Gestion locative")}</p>
           </div>
 
           <Tooltip>
@@ -339,7 +341,7 @@ export function AppShell({ children, email, displayName, preview = false }: AppS
       </div>
 
       <nav aria-label="Raccourcis mobiles" className="fixed inset-x-0 bottom-0 z-30 grid h-16 grid-cols-4 border-t bg-background/95 px-2 backdrop-blur-xl md:hidden">
-        <Link className={cn("flex flex-col items-center justify-center gap-1 text-[0.65rem] font-medium", pathname === "/espace" || preview ? "text-brand-blue" : "text-muted-foreground")} href={preview ? "/design-system/shell" : "/espace"}>
+        <Link className={cn("flex flex-col items-center justify-center gap-1 text-[0.65rem] font-medium", pathname === "/espace" || preview ? "text-brand-blue" : "text-muted-foreground")} href={preview ? previewHomeHref : "/espace"}>
           <House aria-hidden="true" className="size-4.5" />Accueil
         </Link>
         <button aria-label="Propriétés — module bientôt disponible" className="flex cursor-not-allowed flex-col items-center justify-center gap-1 text-[0.65rem] font-medium text-muted-foreground opacity-55" disabled type="button">

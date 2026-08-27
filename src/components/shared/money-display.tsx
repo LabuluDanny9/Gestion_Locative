@@ -10,7 +10,7 @@ type MoneyDisplayProps = {
 export function MoneyDisplay({ amount, currency = "USD", locale = "fr-CD", className }: MoneyDisplayProps) {
   return (
     <span className={cn("font-medium tabular-nums", className)}>
-      {new Intl.NumberFormat(locale, { style: "currency", currency, maximumFractionDigits: 2 }).format(amount)}
+      {new Intl.NumberFormat(locale, { maximumFractionDigits: 2, minimumFractionDigits: 0 }).format(amount)}&nbsp;{currency}
     </span>
   );
 }

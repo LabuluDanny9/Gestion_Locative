@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { LayoutPanelLeft, MonitorSmartphone, SearchCheck } from "lucide-react";
+import { LayoutDashboard, LayoutPanelLeft, MonitorSmartphone, SearchCheck } from "lucide-react";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/shared/page-header";
@@ -31,7 +31,7 @@ export default function ShellPreviewPage() {
   return (
     <AppShell displayName="Aperçu design" preview>
       <PageHeader
-        actions={<Button asChild variant="outline"><Link href="/design-system">Voir tous les composants</Link></Button>}
+        actions={<><Button asChild><Link href="/design-system/dashboard"><LayoutDashboard />Voir le dashboard</Link></Button><Button asChild variant="outline"><Link href="/design-system">Voir les composants</Link></Button></>}
         description="Le cadre applicatif est prêt. Les données ci-dessous documentent uniquement sa structure ; aucun dashboard métier n’est encore commencé."
         eyebrow="Étape 2"
         title="Shell global"

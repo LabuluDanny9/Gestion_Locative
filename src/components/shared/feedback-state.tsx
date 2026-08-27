@@ -1,15 +1,25 @@
+"use client";
+
 import { AlertTriangle, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export function ErrorState({ title = "Impossible de charger les données", description = "Réessayez dans quelques instants." }) {
+export function ErrorState({
+  title = "Impossible de charger les données",
+  description = "Réessayez dans quelques instants.",
+  onRetry,
+}: {
+  title?: string;
+  description?: string;
+  onRetry?: () => void;
+}) {
   return (
     <div className="flex min-h-48 flex-col items-center justify-center rounded-xl border border-destructive/20 bg-destructive/4 px-6 text-center">
       <span className="grid size-10 place-items-center rounded-xl bg-destructive/10 text-destructive"><AlertTriangle className="size-5" /></span>
       <h3 className="mt-4 font-heading font-semibold">{title}</h3>
       <p className="mt-1 max-w-sm text-sm text-muted-foreground">{description}</p>
-      <Button className="mt-4" disabled size="sm" variant="outline"><RefreshCw />Réessayer</Button>
+      <Button className="mt-4" disabled={!onRetry} onClick={onRetry} size="sm" variant="outline"><RefreshCw />Réessayer</Button>
     </div>
   );
 }
