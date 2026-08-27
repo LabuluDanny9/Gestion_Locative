@@ -9,7 +9,7 @@ describe("tenant demo data", () => {
   });
 
   it("links unit occupants to tenant records", () => {
-    expect(getTenantByCode("LOC-2026-0018")?.name).toBe("Grâce Tshibangu");
+    expect(getTenantByCode("LOC-2026-0018")?.name).toBe("Locataire Démo 02");
     expect(getTenantByCode("UNKNOWN")).toBeUndefined();
   });
 });

@@ -70,8 +70,8 @@ export function getDashboardData(period: DashboardPeriod) {
       { name: "Réservés", value: 1, color: "#D4A72C" },
     ],
     upcoming: [
-      { id: "due-1", tenant: "Jean Kabulo", unit: "Appartement A03", amount: 350, timing: "Dans 2 jours" },
-      { id: "due-2", tenant: "Grâce Tshibangu", unit: "Studio B07", amount: 280, timing: "Dans 3 jours" },
+      { id: "due-1", tenant: "Locataire Démo 01", unit: "Appartement A03", amount: 350, timing: "Dans 2 jours" },
+      { id: "due-2", tenant: "Locataire Démo 02", unit: "Studio B07", amount: 280, timing: "Dans 3 jours" },
       { id: "due-3", tenant: "Patrick Kalala", unit: "Maison M02", amount: 620, timing: "Dans 5 jours" },
     ],
     arrears: [
@@ -80,7 +80,7 @@ export function getDashboardData(period: DashboardPeriod) {
       { id: "late-3", tenant: "Alain Mukendi", unit: "Maison M05", amount: 980, days: 64, unpaid: "2 mois impayés" },
     ],
     recentPayments: [
-      { id: "REC-2026-00124", tenant: "Jean Kabulo", unit: "A03", amount: 350, date: "Aujourd’hui, 10:42", status: "paid" as const },
+      { id: "REC-2026-00124", tenant: "Locataire Démo 01", unit: "A03", amount: 350, date: "Aujourd’hui, 10:42", status: "paid" as const },
       { id: "REC-2026-00123", tenant: "Chantal Ilunga", unit: "B02", amount: 550, date: "Aujourd’hui, 09:18", status: "paid" as const },
       { id: "REC-2026-00122", tenant: "Moïse Kabila", unit: "A11", amount: 200, date: "Hier, 16:05", status: "partial" as const },
       { id: "REC-2026-00121", tenant: "Élodie Mumba", unit: "C08", amount: 410, date: "Hier, 14:26", status: "paid" as const },
