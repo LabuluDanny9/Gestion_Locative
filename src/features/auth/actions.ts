@@ -65,7 +65,11 @@ export async function requestPasswordResetAction(
   if (!parsed.success) return invalidState(parsed.error);
 
   const environment = parseServerEnv();
-  const appUrl = environment.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl =
+    environment.NEXT_PUBLIC_APP_URL?.trim() ||
+    (process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000");
   const supabase = await createServerSupabaseClient();
 
   await supabase.auth.resetPasswordForEmail(parsed.data.email, {

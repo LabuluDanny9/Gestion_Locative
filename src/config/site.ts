@@ -6,7 +6,9 @@ export const siteConfig = {
   locale: "fr-CD",
   timezone: "Africa/Lubumbashi",
   currencies: ["USD", "CDF"],
-  url: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+  url:
+    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"),
   repositoryUrl: "https://github.com/LabuluDanny9/Gestion_Locative",
   links: {
     github: "https://github.com/LabuluDanny9/Gestion_Locative",
