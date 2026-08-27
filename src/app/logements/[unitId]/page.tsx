@@ -10,5 +10,5 @@ export const metadata: Metadata = { title: "Détail logement" };
 export default async function UnitDetailPage({ params }: { params: Promise<{ unitId: string }> }) {
   const unit = getUnit((await params).unitId);
   if (!unit) notFound();
-  return <ProtectedAppShell><UnitDetailView basePath="/logements" dashboardHref="/espace" propertyBasePath="/proprietes" tenantBasePath="/locataires" unit={unit} /></ProtectedAppShell>;
+  return <ProtectedAppShell><UnitDetailView basePath="/logements" contractBasePath="/contrats" dashboardHref="/espace" propertyBasePath="/proprietes" tenantBasePath="/locataires" unit={unit} /></ProtectedAppShell>;
 }

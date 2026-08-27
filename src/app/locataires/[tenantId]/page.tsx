@@ -10,5 +10,5 @@ export const metadata: Metadata = { title: "Détail locataire" };
 export default async function TenantDetailPage({ params }: { params: Promise<{ tenantId: string }> }) {
   const tenant = getTenant((await params).tenantId);
   if (!tenant) notFound();
-  return <ProtectedAppShell><TenantDetailView basePath="/locataires" dashboardHref="/espace" tenant={tenant} unitBasePath="/logements" /></ProtectedAppShell>;
+  return <ProtectedAppShell><TenantDetailView basePath="/locataires" contractBasePath="/contrats" dashboardHref="/espace" tenant={tenant} unitBasePath="/logements" /></ProtectedAppShell>;
 }

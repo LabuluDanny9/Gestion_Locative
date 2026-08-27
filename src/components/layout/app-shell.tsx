@@ -72,6 +72,7 @@ function resolveNavigationHref(href: string | undefined, preview: boolean, previ
     "/proprietes": "/design-system/proprietes",
     "/logements": "/design-system/logements",
     "/locataires": "/design-system/locataires",
+    "/contrats": "/design-system/contrats",
     "/profil": "/design-system",
   }[href] ?? href;
 }
@@ -209,7 +210,7 @@ function CreateMenu({ preview = false }: { preview?: boolean }) {
         <DropdownMenuItem asChild><Link href={preview ? "/design-system/proprietes/nouvelle" : "/proprietes/nouvelle"}><Building2 />Propriété</Link></DropdownMenuItem>
         <DropdownMenuItem asChild><Link href={preview ? "/design-system/logements/nouveau" : "/logements/nouveau"}><House />Logement</Link></DropdownMenuItem>
         <DropdownMenuItem asChild><Link href={preview ? "/design-system/locataires/nouveau" : "/locataires/nouveau"}><Users />Locataire</Link></DropdownMenuItem>
-        <DropdownMenuItem disabled><FileText />Contrat</DropdownMenuItem>
+        <DropdownMenuItem asChild><Link href={preview ? "/design-system/contrats/nouveau" : "/contrats/nouveau"}><FileText />Contrat</Link></DropdownMenuItem>
         <DropdownMenuItem disabled><WalletCards />Paiement</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -278,7 +279,8 @@ export function AppShell({ children, email, displayName, preview = false, previe
     ? pathname.startsWith("/design-system/proprietes") ? { label: "Propriétés" }
       : pathname.startsWith("/design-system/logements") ? { label: "Logements" }
         : pathname.startsWith("/design-system/locataires") ? { label: "Locataires" }
-          : { label: "Dashboard" }
+          : pathname.startsWith("/design-system/contrats") ? { label: "Contrats" }
+            : { label: "Dashboard" }
     : getCurrentNavigationItem(pathname);
 
   return (

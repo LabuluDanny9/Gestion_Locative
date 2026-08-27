@@ -13,7 +13,7 @@ import type { Tenant } from "./tenant-data";
 import { TenantQuickActions } from "./tenant-quick-actions";
 import { TenantStatusBadge } from "./tenant-status-badge";
 
-export function TenantDetailView({ tenant, basePath, dashboardHref, unitBasePath }: { tenant: Tenant; basePath: string; dashboardHref: string; unitBasePath: string }) {
+export function TenantDetailView({ tenant, basePath, dashboardHref, unitBasePath, contractBasePath }: { tenant: Tenant; basePath: string; dashboardHref: string; unitBasePath: string; contractBasePath: string }) {
   const kpis = [
     { label: "Loyer mensuel", value: <MoneyDisplay amount={tenant.rent} currency={tenant.currency} />, icon: Wallet },
     { label: "Solde actuel", value: <MoneyDisplay amount={tenant.balance} currency={tenant.currency} />, icon: WalletCards },
@@ -29,7 +29,7 @@ export function TenantDetailView({ tenant, basePath, dashboardHref, unitBasePath
           <TenantAvatar large name={tenant.name} />
           <div className="min-w-0"><div className="mb-2 flex flex-wrap items-center gap-2"><TenantStatusBadge status={tenant.status} /><span className="text-xs font-medium text-muted-foreground">{tenant.code}</span></div><h1 className="font-heading text-2xl font-semibold tracking-[-0.03em] sm:text-3xl">{tenant.name}</h1><div className="mt-2 flex flex-col gap-1 text-sm text-muted-foreground sm:flex-row sm:flex-wrap sm:gap-x-4"><a className="flex items-center gap-1.5 hover:text-foreground" href={`tel:${tenant.phone.replace(/\s/g, "")}`}><Phone aria-hidden="true" className="size-3.5" />{tenant.phone}</a><a className="flex items-center gap-1.5 hover:text-foreground" href={`mailto:${tenant.email}`}><Mail aria-hidden="true" className="size-3.5" />{tenant.email}</a><Link className="flex items-center gap-1.5 hover:text-brand-blue" href={`${unitBasePath}/${tenant.unitId}`}><House aria-hidden="true" className="size-3.5" />{tenant.unitLabel}</Link></div></div>
         </div>
-        <TenantQuickActions />
+        <TenantQuickActions contractHref={`${contractBasePath}/${tenant.contractId}`} />
       </header>
 
       <section aria-label="Indicateurs du locataire" className="grid grid-cols-2 gap-3 xl:grid-cols-4">

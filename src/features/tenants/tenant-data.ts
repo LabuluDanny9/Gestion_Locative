@@ -28,6 +28,7 @@ export type Tenant = {
   status: TenantStatus;
   contractStart: string;
   contractEnd: string;
+  contractId: string;
   identityType: string;
   identityNumber: string;
   address: string;
@@ -54,6 +55,7 @@ export const tenants: Tenant[] = [
     status: "current",
     contractStart: "01 septembre 2026",
     contractEnd: "31 août 2027",
+    contractId: "ctr-2026-0042",
     identityType: "Passeport",
     identityNumber: "OP-0912846",
     address: "Quartier Golf, Lubumbashi",
@@ -82,6 +84,7 @@ export const tenants: Tenant[] = [
     status: "partial",
     contractStart: "01 juillet 2026",
     contractEnd: "30 juin 2027",
+    contractId: "ctr-2026-0031",
     identityType: "Carte d'électeur",
     identityNumber: "CD-20877411",
     address: "Kamalondo, Lubumbashi",
@@ -109,6 +112,7 @@ export const tenants: Tenant[] = [
     status: "late",
     contractStart: "01 décembre 2025",
     contractEnd: "30 novembre 2026",
+    contractId: "ctr-2025-0096",
     identityType: "Passeport",
     identityNumber: "OP-0756320",
     address: "Golf Météo, Lubumbashi",
@@ -133,6 +137,7 @@ export const tenants: Tenant[] = [
     status: "arrears",
     contractStart: "05 novembre 2025",
     contractEnd: "04 novembre 2026",
+    contractId: "ctr-2026-0058",
     identityType: "Permis de conduire",
     identityNumber: "PC-882041",
     address: "Manika, Kolwezi",

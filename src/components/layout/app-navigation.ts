@@ -37,7 +37,7 @@ export const appNavigation: NavigationGroup[] = [
       { label: "Propriétés", icon: Building2, href: "/proprietes", enabled: true },
       { label: "Logements", icon: House, href: "/logements", enabled: true },
       { label: "Locataires", icon: Users, href: "/locataires", enabled: true },
-      { label: "Contrats", icon: FileSignature, enabled: false },
+      { label: "Contrats", icon: FileSignature, href: "/contrats", enabled: true },
     ],
   },
   {
