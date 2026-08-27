@@ -11,10 +11,10 @@ import {
   CircleHelp,
   FileText,
   House,
+  LayoutDashboard,
   LogOut,
   Menu,
   Plus,
-  ReceiptText,
   Search,
   UserRound,
   Users,
@@ -24,7 +24,6 @@ import {
 import { BrandMark } from "@/components/brand/brand-mark";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -64,6 +63,16 @@ function getInitials(displayName?: string, email?: string) {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join("");
+}
+
+function resolveNavigationHref(href: string | undefined, preview: boolean, previewHomeHref: string) {
+  if (!href || !preview) return href;
+  return {
+    "/espace": previewHomeHref,
+    "/proprietes": "/design-system/proprietes",
+    "/logements": "/design-system/logements",
+    "/profil": "/design-system",
+  }[href] ?? href;
 }
 
 function NavigationLink({ item, active, collapsed, forceLabels = false, onNavigate }: {
@@ -139,20 +148,22 @@ function SidebarNavigation({ pathname, collapsed, forceLabels = false, onNavigat
             <div className="mx-auto mb-2 h-px w-6 bg-white/10 first:hidden" />
           )}
           <div className="space-y-1">
-            {group.items.map((item) => (
-              <NavigationLink
-                active={preview ? item.href === "/espace" : Boolean(item.href && (pathname === item.href || pathname.startsWith(`${item.href}/`)))}
-                collapsed={collapsed}
-                forceLabels={forceLabels}
-                item={preview && item.href === "/espace"
-                  ? { ...item, href: previewHomeHref }
-                  : preview && item.href === "/profil"
-                    ? { ...item, href: "/design-system" }
-                    : item}
-                key={item.label}
-                onNavigate={onNavigate}
-              />
-            ))}
+            {group.items.map((item) => {
+              const resolvedHref = resolveNavigationHref(item.href, preview, previewHomeHref);
+              const isActive = resolvedHref === "/design-system"
+                ? pathname === resolvedHref
+                : Boolean(resolvedHref && (pathname === resolvedHref || pathname.startsWith(`${resolvedHref}/`)));
+              return (
+                <NavigationLink
+                  active={isActive}
+                  collapsed={collapsed}
+                  forceLabels={forceLabels}
+                  item={{ ...item, href: resolvedHref }}
+                  key={item.label}
+                  onNavigate={onNavigate}
+                />
+              );
+            })}
           </div>
         </div>
       ))}
@@ -181,7 +192,7 @@ function NotificationMenu() {
   );
 }
 
-function CreateMenu() {
+function CreateMenu({ preview = false }: { preview?: boolean }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -194,8 +205,8 @@ function CreateMenu() {
       <DropdownMenuContent align="end" className="w-60">
         <DropdownMenuLabel>Création rapide</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem disabled><Building2 />Propriété <Badge className="ml-auto" variant="secondary">bientôt</Badge></DropdownMenuItem>
-        <DropdownMenuItem disabled><House />Logement</DropdownMenuItem>
+        <DropdownMenuItem asChild><Link href={preview ? "/design-system/proprietes/nouvelle" : "/proprietes/nouvelle"}><Building2 />Propriété</Link></DropdownMenuItem>
+        <DropdownMenuItem asChild><Link href={preview ? "/design-system/logements/nouveau" : "/logements/nouveau"}><House />Logement</Link></DropdownMenuItem>
         <DropdownMenuItem disabled><Users />Locataire</DropdownMenuItem>
         <DropdownMenuItem disabled><FileText />Contrat</DropdownMenuItem>
         <DropdownMenuItem disabled><WalletCards />Paiement</DropdownMenuItem>
@@ -262,7 +273,11 @@ export function AppShell({ children, email, displayName, preview = false, previe
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const currentItem = getCurrentNavigationItem(pathname);
+  const currentItem = preview
+    ? pathname.startsWith("/design-system/proprietes") ? { label: "Propriétés" }
+      : pathname.startsWith("/design-system/logements") ? { label: "Logements" }
+        : { label: "Dashboard" }
+    : getCurrentNavigationItem(pathname);
 
   return (
     <div className="min-h-screen bg-background">
@@ -327,7 +342,7 @@ export function AppShell({ children, email, displayName, preview = false, previe
           </Tooltip>
 
           <div className="ml-auto flex items-center gap-0.5 sm:gap-1">
-            <CreateMenu />
+            <CreateMenu preview={preview} />
             <NotificationMenu />
             <HelpMenu />
             <ThemeToggle />
@@ -341,15 +356,15 @@ export function AppShell({ children, email, displayName, preview = false, previe
       </div>
 
       <nav aria-label="Raccourcis mobiles" className="fixed inset-x-0 bottom-0 z-30 grid h-16 grid-cols-4 border-t bg-background/95 px-2 backdrop-blur-xl md:hidden">
-        <Link className={cn("flex flex-col items-center justify-center gap-1 text-[0.65rem] font-medium", pathname === "/espace" || preview ? "text-brand-blue" : "text-muted-foreground")} href={preview ? previewHomeHref : "/espace"}>
-          <House aria-hidden="true" className="size-4.5" />Accueil
+        <Link className={cn("flex flex-col items-center justify-center gap-1 text-[0.65rem] font-medium", pathname === "/espace" || pathname === previewHomeHref ? "text-brand-blue" : "text-muted-foreground")} href={preview ? previewHomeHref : "/espace"}>
+          <LayoutDashboard aria-hidden="true" className="size-4.5" />Accueil
         </Link>
-        <button aria-label="Propriétés — module bientôt disponible" className="flex cursor-not-allowed flex-col items-center justify-center gap-1 text-[0.65rem] font-medium text-muted-foreground opacity-55" disabled type="button">
+        <Link className={cn("flex flex-col items-center justify-center gap-1 text-[0.65rem] font-medium", pathname.startsWith(preview ? "/design-system/proprietes" : "/proprietes") ? "text-brand-blue" : "text-muted-foreground")} href={preview ? "/design-system/proprietes" : "/proprietes"}>
           <Building2 aria-hidden="true" className="size-4.5" />Propriétés
-        </button>
-        <button aria-label="Paiements — module bientôt disponible" className="flex cursor-not-allowed flex-col items-center justify-center gap-1 text-[0.65rem] font-medium text-muted-foreground opacity-55" disabled type="button">
-          <ReceiptText aria-hidden="true" className="size-4.5" />Paiements
-        </button>
+        </Link>
+        <Link className={cn("flex flex-col items-center justify-center gap-1 text-[0.65rem] font-medium", pathname.startsWith(preview ? "/design-system/logements" : "/logements") ? "text-brand-blue" : "text-muted-foreground")} href={preview ? "/design-system/logements" : "/logements"}>
+          <House aria-hidden="true" className="size-4.5" />Logements
+        </Link>
         <Link className={cn("flex flex-col items-center justify-center gap-1 text-[0.65rem] font-medium", pathname === "/profil" ? "text-brand-blue" : "text-muted-foreground")} href={preview ? "/design-system" : "/profil"}>
           <UserRound aria-hidden="true" className="size-4.5" />Profil
         </Link>

@@ -34,8 +34,8 @@ export const appNavigation: NavigationGroup[] = [
     label: "Gestion",
     items: [
       { label: "Dashboard", icon: LayoutDashboard, href: "/espace", enabled: true },
-      { label: "Propriétés", icon: Building2, enabled: false },
-      { label: "Logements", icon: House, enabled: false },
+      { label: "Propriétés", icon: Building2, href: "/proprietes", enabled: true },
+      { label: "Logements", icon: House, href: "/logements", enabled: true },
       { label: "Locataires", icon: Users, enabled: false },
       { label: "Contrats", icon: FileSignature, enabled: false },
     ],
