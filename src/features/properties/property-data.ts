@@ -35,7 +35,7 @@ export type Unit = {
   rent: number;
   currency: "USD" | "CDF";
   status: UnitStatus;
-  tenant?: { name: string; code: string; contractStart: string; contractEnd: string };
+  tenant?: { id: string; name: string; code: string; contractStart: string; contractEnd: string };
   image: string;
 };
 
@@ -113,12 +113,12 @@ export const properties: Property[] = [
 ];
 
 export const units: Unit[] = [
-  { id: "appartement-a03", code: "A03", type: "Appartement", propertyId: "residence-grace", propertyName: "Résidence Grâce", building: "Bâtiment A", floor: "2e étage", bedrooms: 2, livingRooms: 1, bathrooms: 1, kitchens: 1, area: 82, rent: 350, currency: "USD", status: "occupied", tenant: { name: "Jean Kabulo", code: "LOC-2026-0023", contractStart: "01/09/2026", contractEnd: "31/08/2027" }, image: propertyImage },
+  { id: "appartement-a03", code: "A03", type: "Appartement", propertyId: "residence-grace", propertyName: "Résidence Grâce", building: "Bâtiment A", floor: "2e étage", bedrooms: 2, livingRooms: 1, bathrooms: 1, kitchens: 1, area: 82, rent: 350, currency: "USD", status: "occupied", tenant: { id: "jean-kabulo", name: "Jean Kabulo", code: "LOC-2026-0023", contractStart: "01/09/2026", contractEnd: "31/08/2027" }, image: propertyImage },
   { id: "appartement-a04", code: "A04", type: "Appartement", propertyId: "residence-grace", propertyName: "Résidence Grâce", building: "Bâtiment A", floor: "2e étage", bedrooms: 2, livingRooms: 1, bathrooms: 1, kitchens: 1, area: 80, rent: 350, currency: "USD", status: "available", image: propertyImage },
-  { id: "studio-b01", code: "B01", type: "Studio", propertyId: "residence-grace", propertyName: "Résidence Grâce", building: "Bâtiment B", floor: "Rez-de-chaussée", bedrooms: 1, livingRooms: 0, bathrooms: 1, kitchens: 1, area: 42, rent: 240, currency: "USD", status: "occupied", tenant: { name: "Grâce Tshibangu", code: "LOC-2026-0018", contractStart: "01/07/2026", contractEnd: "30/06/2027" }, image: propertyImage },
+  { id: "studio-b01", code: "B01", type: "Studio", propertyId: "residence-grace", propertyName: "Résidence Grâce", building: "Bâtiment B", floor: "Rez-de-chaussée", bedrooms: 1, livingRooms: 0, bathrooms: 1, kitchens: 1, area: 42, rent: 240, currency: "USD", status: "occupied", tenant: { id: "grace-tshibangu", name: "Grâce Tshibangu", code: "LOC-2026-0018", contractStart: "01/07/2026", contractEnd: "30/06/2027" }, image: propertyImage },
   { id: "appartement-b04", code: "B04", type: "Appartement", propertyId: "residence-grace", propertyName: "Résidence Grâce", building: "Bâtiment B", floor: "1er étage", bedrooms: 3, livingRooms: 1, bathrooms: 2, kitchens: 1, area: 108, rent: 520, currency: "USD", status: "maintenance", image: propertyImage },
-  { id: "villa-m01", code: "M01", type: "Maison", propertyId: "villa-mwezi", propertyName: "Villa Mwezi", building: "Maison principale", floor: "Duplex", bedrooms: 4, livingRooms: 2, bathrooms: 3, kitchens: 1, area: 240, rent: 1200, currency: "USD", status: "occupied", image: propertyImage },
-  { id: "appartement-u12", code: "U12", type: "Appartement", propertyId: "immeuble-upemba", propertyName: "Immeuble Upemba", building: "Tour principale", floor: "4e étage", bedrooms: 2, livingRooms: 1, bathrooms: 1, kitchens: 1, area: 76, rent: 420, currency: "USD", status: "reserved", image: propertyImage },
+  { id: "villa-m01", code: "M01", type: "Maison", propertyId: "villa-mwezi", propertyName: "Villa Mwezi", building: "Maison principale", floor: "Duplex", bedrooms: 4, livingRooms: 2, bathrooms: 3, kitchens: 1, area: 240, rent: 1200, currency: "USD", status: "occupied", tenant: { id: "patrick-mwamba", name: "Patrick Mwamba", code: "LOC-2025-0096", contractStart: "01/12/2025", contractEnd: "30/11/2026" }, image: propertyImage },
+  { id: "appartement-u12", code: "U12", type: "Appartement", propertyId: "immeuble-upemba", propertyName: "Immeuble Upemba", building: "Tour principale", floor: "4e étage", bedrooms: 2, livingRooms: 1, bathrooms: 1, kitchens: 1, area: 76, rent: 420, currency: "USD", status: "occupied", tenant: { id: "amina-kasongo", name: "Amina Kasongo", code: "LOC-2025-0072", contractStart: "05/11/2025", contractEnd: "04/11/2026" }, image: propertyImage },
 ];
 
 export function getProperty(id: string) {

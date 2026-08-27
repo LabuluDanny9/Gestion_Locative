@@ -1,8 +1,8 @@
 export const siteConfig = {
-  name: "Gestion Locative",
-  shortName: "GL",
+  name: "AMIRANDA EMPIRE",
+  shortName: "AE",
   description:
-    "Une plateforme fiable pour piloter les biens, contrats, loyers et encaissements.",
+    "La plateforme immobilière d’AMIRANDA EMPIRE pour piloter les biens, contrats, loyers et encaissements.",
   locale: "fr-CD",
   timezone: "Africa/Lubumbashi",
   currencies: ["USD", "CDF"],

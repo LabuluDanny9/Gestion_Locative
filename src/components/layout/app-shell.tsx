@@ -71,6 +71,7 @@ function resolveNavigationHref(href: string | undefined, preview: boolean, previ
     "/espace": previewHomeHref,
     "/proprietes": "/design-system/proprietes",
     "/logements": "/design-system/logements",
+    "/locataires": "/design-system/locataires",
     "/profil": "/design-system",
   }[href] ?? href;
 }
@@ -207,7 +208,7 @@ function CreateMenu({ preview = false }: { preview?: boolean }) {
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild><Link href={preview ? "/design-system/proprietes/nouvelle" : "/proprietes/nouvelle"}><Building2 />Propriété</Link></DropdownMenuItem>
         <DropdownMenuItem asChild><Link href={preview ? "/design-system/logements/nouveau" : "/logements/nouveau"}><House />Logement</Link></DropdownMenuItem>
-        <DropdownMenuItem disabled><Users />Locataire</DropdownMenuItem>
+        <DropdownMenuItem asChild><Link href={preview ? "/design-system/locataires/nouveau" : "/locataires/nouveau"}><Users />Locataire</Link></DropdownMenuItem>
         <DropdownMenuItem disabled><FileText />Contrat</DropdownMenuItem>
         <DropdownMenuItem disabled><WalletCards />Paiement</DropdownMenuItem>
       </DropdownMenuContent>
@@ -276,7 +277,8 @@ export function AppShell({ children, email, displayName, preview = false, previe
   const currentItem = preview
     ? pathname.startsWith("/design-system/proprietes") ? { label: "Propriétés" }
       : pathname.startsWith("/design-system/logements") ? { label: "Logements" }
-        : { label: "Dashboard" }
+        : pathname.startsWith("/design-system/locataires") ? { label: "Locataires" }
+          : { label: "Dashboard" }
     : getCurrentNavigationItem(pathname);
 
   return (
@@ -313,7 +315,7 @@ export function AppShell({ children, email, displayName, preview = false, previe
             <SheetContent className="data-[side=left]:w-[18rem] gap-0 border-sidebar-border bg-sidebar p-0 text-sidebar-foreground" side="left">
               <SheetHeader className="border-b border-sidebar-border px-5 py-4 text-left">
                 <SheetTitle><BrandMark inverse /></SheetTitle>
-                <SheetDescription className="sr-only">Navigation principale de Gestion locative</SheetDescription>
+              <SheetDescription className="sr-only">Navigation principale d’AMIRANDA EMPIRE</SheetDescription>
               </SheetHeader>
               <SidebarNavigation collapsed={false} forceLabels onNavigate={() => setMobileOpen(false)} pathname={pathname} preview={preview} previewHomeHref={previewHomeHref} />
             </SheetContent>
@@ -321,7 +323,7 @@ export function AppShell({ children, email, displayName, preview = false, previe
 
           <div className="hidden min-w-28 md:block xl:min-w-36">
             <p className="text-xs text-muted-foreground">Espace de gestion</p>
-            <p className="truncate text-sm font-semibold">{currentItem?.label ?? (preview ? "Dashboard" : "Gestion locative")}</p>
+            <p className="truncate text-sm font-semibold">{currentItem?.label ?? (preview ? "Dashboard" : "AMIRANDA EMPIRE")}</p>
           </div>
 
           <Tooltip>
@@ -355,7 +357,7 @@ export function AppShell({ children, email, displayName, preview = false, previe
         </main>
       </div>
 
-      <nav aria-label="Raccourcis mobiles" className="fixed inset-x-0 bottom-0 z-30 grid h-16 grid-cols-4 border-t bg-background/95 px-2 backdrop-blur-xl md:hidden">
+      <nav aria-label="Raccourcis mobiles" className="fixed inset-x-0 bottom-0 z-30 grid h-16 grid-cols-5 border-t bg-background/95 px-1 backdrop-blur-xl md:hidden">
         <Link className={cn("flex flex-col items-center justify-center gap-1 text-[0.65rem] font-medium", pathname === "/espace" || pathname === previewHomeHref ? "text-brand-blue" : "text-muted-foreground")} href={preview ? previewHomeHref : "/espace"}>
           <LayoutDashboard aria-hidden="true" className="size-4.5" />Accueil
         </Link>
@@ -364,6 +366,9 @@ export function AppShell({ children, email, displayName, preview = false, previe
         </Link>
         <Link className={cn("flex flex-col items-center justify-center gap-1 text-[0.65rem] font-medium", pathname.startsWith(preview ? "/design-system/logements" : "/logements") ? "text-brand-blue" : "text-muted-foreground")} href={preview ? "/design-system/logements" : "/logements"}>
           <House aria-hidden="true" className="size-4.5" />Logements
+        </Link>
+        <Link className={cn("flex flex-col items-center justify-center gap-1 text-[0.65rem] font-medium", pathname.startsWith(preview ? "/design-system/locataires" : "/locataires") ? "text-brand-blue" : "text-muted-foreground")} href={preview ? "/design-system/locataires" : "/locataires"}>
+          <Users aria-hidden="true" className="size-4.5" />Locataires
         </Link>
         <Link className={cn("flex flex-col items-center justify-center gap-1 text-[0.65rem] font-medium", pathname === "/profil" ? "text-brand-blue" : "text-muted-foreground")} href={preview ? "/design-system" : "/profil"}>
           <UserRound aria-hidden="true" className="size-4.5" />Profil

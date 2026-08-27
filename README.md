@@ -1,6 +1,6 @@
-# Gestion Locative
+# AMIRANDA EMPIRE
 
-Application web professionnelle de gestion locative pour piloter progressivement les propriétaires, biens, locataires, contrats, loyers et paiements.
+Application web professionnelle d’AMIRANDA EMPIRE pour piloter progressivement les propriétaires, biens, locataires, contrats, loyers et paiements.
 
 ## État du projet
 

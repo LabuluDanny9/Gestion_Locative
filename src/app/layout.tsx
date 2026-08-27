@@ -15,6 +15,10 @@ export const metadata: Metadata = {
   },
   description: siteConfig.description,
   applicationName: siteConfig.name,
+  icons: {
+    icon: "/images/logo_AMIRANDA_EMPIRE-.png",
+    apple: "/images/logo_AMIRANDA_EMPIRE-.png",
+  },
 };
 
 export default function RootLayout({

@@ -102,7 +102,7 @@ export default function DesignSystemPage() {
       <div className="mx-auto max-w-[96rem] px-5 py-10 sm:px-8 sm:py-14">
         <PageHeader
           description="Fondations visuelles et composants de référence pour une interface locative premium, cohérente, accessible et adaptée aux données financières."
-          eyebrow="Gestion locative"
+          eyebrow="AMIRANDA EMPIRE"
           title="Design system"
         />
 
