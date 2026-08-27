@@ -1559,6 +1559,62 @@ export type Database = {
           },
         ]
       }
+      unit_photos: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_size_bytes: number
+          id: string
+          is_cover: boolean
+          mime_type: string
+          organization_id: string
+          room_label: string | null
+          sort_order: number
+          storage_path: string
+          unit_id: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_size_bytes: number
+          id?: string
+          is_cover?: boolean
+          mime_type: string
+          organization_id: string
+          room_label?: string | null
+          sort_order?: number
+          storage_path: string
+          unit_id: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_size_bytes?: number
+          id?: string
+          is_cover?: boolean
+          mime_type?: string
+          organization_id?: string
+          room_label?: string | null
+          sort_order?: number
+          storage_path?: string
+          unit_id?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unit_photos_org_unit_fkey"
+            columns: ["organization_id", "unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["organization_id", "id"]
+          },
+        ]
+      }
       units: {
         Row: {
           archived_at: string | null
@@ -1753,6 +1809,23 @@ export type Database = {
         }
         Returns: Database["public"]["Enums"]["invoice_status"]
       }
+      create_lease_with_tenant: {
+        Args: {
+          p_advance_amount?: number
+          p_currency: Database["public"]["Enums"]["currency_code"]
+          p_due_day?: number
+          p_end_date: string
+          p_frequency?: Database["public"]["Enums"]["billing_frequency"]
+          p_guarantee_amount?: number
+          p_organization_id: string
+          p_rent_amount: number
+          p_start_date: string
+          p_tenant_id: string
+          p_terms?: string
+          p_unit_id: string
+        }
+        Returns: string
+      }
       next_human_number: {
         Args: {
           p_entity_type: string
@@ -1760,6 +1833,21 @@ export type Database = {
           p_padding?: number
           p_prefix: string
           p_year?: number
+        }
+        Returns: string
+      }
+      record_rent_payment: {
+        Args: {
+          p_amount: number
+          p_currency: Database["public"]["Enums"]["currency_code"]
+          p_external_reference?: string
+          p_idempotency_key?: string
+          p_lease_id: string
+          p_method: Database["public"]["Enums"]["payment_method"]
+          p_note?: string
+          p_organization_id: string
+          p_paid_at: string
+          p_tenant_id: string
         }
         Returns: string
       }
