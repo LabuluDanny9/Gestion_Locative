@@ -11,6 +11,7 @@ import {
   TriangleAlert,
   Wallet,
 } from "lucide-react";
+import Link from "next/link";
 
 import { MoneyDisplay } from "@/components/shared/money-display";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -31,6 +32,7 @@ type DashboardViewProps = {
   basePath: string;
   startDate?: string;
   endDate?: string;
+  paymentBasePath: string;
 };
 
 function formatAmount(amount: number, maximumFractionDigits = 0) {
@@ -52,7 +54,7 @@ function ListHeader({ title, description, icon: Icon }: { title: string; descrip
   );
 }
 
-export function DashboardView({ displayName, period, basePath, startDate, endDate }: DashboardViewProps) {
+export function DashboardView({ displayName, period, basePath, paymentBasePath, startDate, endDate }: DashboardViewProps) {
   const data = getDashboardData(period);
   const firstName = displayName?.trim().split(" ")[0];
   const periodHelper = period === "custom" && startDate && endDate
@@ -79,7 +81,7 @@ export function DashboardView({ displayName, period, basePath, startDate, endDat
       <section aria-label="Indicateurs prioritaires mobiles" className="grid grid-cols-2 gap-3 md:hidden">
         <DashboardKpiCard helper="Encaissement du mois" icon={CircleDollarSign} label="Encaissé" priority tone="green" value={formatAmount(data.kpis.collected)} />
         <DashboardKpiCard helper="À recouvrer" icon={TriangleAlert} label="Arriérés" priority tone="red" value={formatAmount(data.kpis.arrears)} />
-        <Button className="col-span-2" disabled size="lg"><Plus />Nouveau paiement <Badge className="ml-1 bg-white/15 text-white">bientôt</Badge></Button>
+        <Button asChild className="col-span-2" size="lg"><Link href={`${paymentBasePath}/nouveau`}><Plus />Nouveau paiement</Link></Button>
       </section>
 
       <section aria-label="Indicateurs principaux" className="hidden gap-4 md:grid md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">

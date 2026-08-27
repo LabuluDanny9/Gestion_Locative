@@ -34,6 +34,7 @@ export default async function DashboardPage({
         displayName={displayName}
         endDate={params.fin}
         period={parseDashboardPeriod(params.periode)}
+        paymentBasePath="/paiements"
         startDate={params.debut}
       />
     </AccountShell>

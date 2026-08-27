@@ -7,6 +7,7 @@ export type TenantPayment = {
   currency: "USD" | "CDF";
   paidAt: string;
   receipt: string;
+  receiptId?: string;
   status: "paid" | "partial";
 };
 
@@ -61,8 +62,8 @@ export const tenants: Tenant[] = [
     address: "Quartier Golf, Lubumbashi",
     emergencyContact: "Cécile Kabulo · +243 991 020 304",
     payments: [
-      { id: "pay-332", period: "Août 2026", amount: 350, currency: "USD", paidAt: "05 août 2026", receipt: "REC-2026-00332", status: "paid" },
-      { id: "pay-301", period: "Juillet 2026", amount: 350, currency: "USD", paidAt: "04 juillet 2026", receipt: "REC-2026-00301", status: "paid" },
+      { id: "pay-332", period: "Août 2026", amount: 350, currency: "USD", paidAt: "05 août 2026", receipt: "REC-2026-00332", receiptId: "rec-2026-00332", status: "paid" },
+      { id: "pay-301", period: "Juillet 2026", amount: 350, currency: "USD", paidAt: "04 juillet 2026", receipt: "REC-2026-00301", receiptId: "rec-2026-00301", status: "paid" },
       { id: "pay-278", period: "Juin 2026", amount: 350, currency: "USD", paidAt: "06 juin 2026", receipt: "REC-2026-00278", status: "paid" },
     ],
   },
@@ -90,8 +91,8 @@ export const tenants: Tenant[] = [
     address: "Kamalondo, Lubumbashi",
     emergencyContact: "David Tshibangu · +243 971 112 030",
     payments: [
-      { id: "pay-329", period: "Août 2026", amount: 160, currency: "USD", paidAt: "08 août 2026", receipt: "REC-2026-00329", status: "partial" },
-      { id: "pay-297", period: "Juillet 2026", amount: 240, currency: "USD", paidAt: "09 juillet 2026", receipt: "REC-2026-00297", status: "paid" },
+      { id: "pay-329", period: "Août 2026", amount: 160, currency: "USD", paidAt: "08 août 2026", receipt: "REC-2026-00329", receiptId: "rec-2026-00329", status: "partial" },
+      { id: "pay-297", period: "Juillet 2026", amount: 240, currency: "USD", paidAt: "09 juillet 2026", receipt: "REC-2026-00297", receiptId: "rec-2026-00297", status: "paid" },
     ],
   },
   {
@@ -117,7 +118,7 @@ export const tenants: Tenant[] = [
     identityNumber: "OP-0756320",
     address: "Golf Météo, Lubumbashi",
     emergencyContact: "Sarah Mwamba · +243 978 552 104",
-    payments: [{ id: "pay-263", period: "Juillet 2026", amount: 1200, currency: "USD", paidAt: "03 juillet 2026", receipt: "REC-2026-00263", status: "paid" }],
+    payments: [{ id: "pay-263", period: "Juillet 2026", amount: 1200, currency: "USD", paidAt: "03 juillet 2026", receipt: "REC-2026-00263", receiptId: "rec-2026-00263", status: "paid" }],
   },
   {
     id: "amina-kasongo",

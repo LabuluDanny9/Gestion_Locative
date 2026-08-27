@@ -20,6 +20,7 @@ export default async function DashboardPreviewPage({
         displayName="Gestionnaire"
         endDate={params.fin}
         period={parseDashboardPeriod(params.periode)}
+        paymentBasePath="/design-system/paiements"
         startDate={params.debut}
       />
     </AppShell>

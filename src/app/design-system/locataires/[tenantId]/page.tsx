@@ -10,5 +10,5 @@ export const metadata: Metadata = { title: "Aperçu fiche locataire" };
 export default async function TenantDetailPreviewPage({ params }: { params: Promise<{ tenantId: string }> }) {
   const tenant = getTenant((await params).tenantId);
   if (!tenant) notFound();
-  return <AppShell displayName="Gestionnaire" preview previewHomeHref="/design-system/dashboard"><TenantDetailView basePath="/design-system/locataires" contractBasePath="/design-system/contrats" dashboardHref="/design-system/dashboard" tenant={tenant} unitBasePath="/design-system/logements" /></AppShell>;
+  return <AppShell displayName="Gestionnaire" preview previewHomeHref="/design-system/dashboard"><TenantDetailView basePath="/design-system/locataires" contractBasePath="/design-system/contrats" dashboardHref="/design-system/dashboard" paymentBasePath="/design-system/paiements" receiptBasePath="/design-system/recus" tenant={tenant} unitBasePath="/design-system/logements" /></AppShell>;
 }

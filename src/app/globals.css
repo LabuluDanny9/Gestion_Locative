@@ -56,6 +56,23 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .receipt-print-area,
+  .receipt-print-area * {
+    visibility: visible;
+  }
+
+  .receipt-print-area {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+  }
+}
+
 :root {
   --background: #f7f8fc;
   --foreground: #0f172a;

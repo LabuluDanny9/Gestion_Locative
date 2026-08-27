@@ -5,7 +5,7 @@ import type { Database } from "@/types/database.types";
 
 import { getPublicSupabaseEnv } from "./env";
 
-const protectedPaths = ["/espace", "/profil", "/organisation", "/proprietes", "/logements", "/locataires", "/contrats"];
+const protectedPaths = ["/espace", "/profil", "/organisation", "/proprietes", "/logements", "/locataires", "/contrats", "/paiements", "/recus"];
 const guestOnlyPaths = ["/login", "/mot-de-passe-oublie"];
 
 function matches(pathname: string, roots: string[]) {

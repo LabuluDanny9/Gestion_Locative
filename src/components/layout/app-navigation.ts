@@ -43,10 +43,10 @@ export const appNavigation: NavigationGroup[] = [
   {
     label: "Finances",
     items: [
-      { label: "Paiements", icon: WalletCards, enabled: false },
+      { label: "Paiements", icon: WalletCards, href: "/paiements", enabled: true },
       { label: "Arriérés", icon: BadgeAlert, enabled: false },
       { label: "Garanties", icon: ShieldCheck, enabled: false },
-      { label: "Reçus", icon: ReceiptText, enabled: false },
+      { label: "Reçus", icon: ReceiptText, href: "/recus", enabled: true },
     ],
   },
   {

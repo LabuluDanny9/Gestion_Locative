@@ -73,6 +73,8 @@ function resolveNavigationHref(href: string | undefined, preview: boolean, previ
     "/logements": "/design-system/logements",
     "/locataires": "/design-system/locataires",
     "/contrats": "/design-system/contrats",
+    "/paiements": "/design-system/paiements",
+    "/recus": "/design-system/recus",
     "/profil": "/design-system",
   }[href] ?? href;
 }
@@ -211,7 +213,7 @@ function CreateMenu({ preview = false }: { preview?: boolean }) {
         <DropdownMenuItem asChild><Link href={preview ? "/design-system/logements/nouveau" : "/logements/nouveau"}><House />Logement</Link></DropdownMenuItem>
         <DropdownMenuItem asChild><Link href={preview ? "/design-system/locataires/nouveau" : "/locataires/nouveau"}><Users />Locataire</Link></DropdownMenuItem>
         <DropdownMenuItem asChild><Link href={preview ? "/design-system/contrats/nouveau" : "/contrats/nouveau"}><FileText />Contrat</Link></DropdownMenuItem>
-        <DropdownMenuItem disabled><WalletCards />Paiement</DropdownMenuItem>
+        <DropdownMenuItem asChild><Link href={preview ? "/design-system/paiements/nouveau" : "/paiements/nouveau"}><WalletCards />Paiement</Link></DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -280,7 +282,9 @@ export function AppShell({ children, email, displayName, preview = false, previe
       : pathname.startsWith("/design-system/logements") ? { label: "Logements" }
         : pathname.startsWith("/design-system/locataires") ? { label: "Locataires" }
           : pathname.startsWith("/design-system/contrats") ? { label: "Contrats" }
-            : { label: "Dashboard" }
+            : pathname.startsWith("/design-system/paiements") ? { label: "Paiements" }
+              : pathname.startsWith("/design-system/recus") ? { label: "Reçus" }
+                : { label: "Dashboard" }
     : getCurrentNavigationItem(pathname);
 
   return (
@@ -372,8 +376,8 @@ export function AppShell({ children, email, displayName, preview = false, previe
         <Link className={cn("flex flex-col items-center justify-center gap-1 text-[0.65rem] font-medium", pathname.startsWith(preview ? "/design-system/locataires" : "/locataires") ? "text-brand-blue" : "text-muted-foreground")} href={preview ? "/design-system/locataires" : "/locataires"}>
           <Users aria-hidden="true" className="size-4.5" />Locataires
         </Link>
-        <Link className={cn("flex flex-col items-center justify-center gap-1 text-[0.65rem] font-medium", pathname === "/profil" ? "text-brand-blue" : "text-muted-foreground")} href={preview ? "/design-system" : "/profil"}>
-          <UserRound aria-hidden="true" className="size-4.5" />Profil
+        <Link className={cn("flex flex-col items-center justify-center gap-1 text-[0.65rem] font-medium", pathname.startsWith(preview ? "/design-system/paiements" : "/paiements") ? "text-brand-blue" : "text-muted-foreground")} href={preview ? "/design-system/paiements" : "/paiements"}>
+          <WalletCards aria-hidden="true" className="size-4.5" />Paiements
         </Link>
       </nav>
     </div>
