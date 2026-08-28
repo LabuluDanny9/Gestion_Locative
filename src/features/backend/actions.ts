@@ -24,13 +24,25 @@ function value(form: FormData, key: string) {
   return String(form.get(key) ?? "");
 }
 
-function finish(path: string) {
+function finish(path: string, entity: string) {
   revalidatePath(path);
   revalidatePath("/espace");
-  redirect(`${path}?creation=ok`);
+  redirect(`${path}?creation=${encodeURIComponent(entity)}`);
+}
+
+function fail(path: string, cause: unknown): never {
+  console.error(`Échec de l’action ${path}`, cause);
+  let message = "Une erreur inattendue est survenue. Réessayez.";
+  if (cause instanceof z.ZodError) message = "Vérifiez les champs obligatoires et leur format.";
+  else if (cause instanceof Error && cause.message.includes("Photo invalide")) message = cause.message;
+  else if (cause instanceof Error && cause.message.includes("Document invalide")) message = cause.message;
+  else if (cause instanceof Error && /duplicate|unique/i.test(cause.message)) message = "Une donnée avec la même référence existe déjà.";
+  else if (cause instanceof Error && /permission|42501/i.test(cause.message)) message = "Votre compte ne possède pas l’autorisation requise.";
+  redirect(`${path}?erreur=${encodeURIComponent(message)}`);
 }
 
 export async function createPropertyAction(form: FormData) {
+  try {
   const parsed = z.object({
     name: text, code: optionalText,
     propertyType: z.enum(["building", "plot", "residence", "house", "villa", "residential_complex", "commercial", "other"]),
@@ -43,10 +55,12 @@ export async function createPropertyAction(form: FormData) {
   await createProperty(supabase, organizationId, {
     ...parsed, code: parsed.code || `PROP-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
   });
-  finish("/proprietes");
+  } catch (cause) { fail("/proprietes/nouvelle", cause); }
+  finish("/proprietes", "propriete");
 }
 
 export async function createUnitAction(form: FormData) {
+  try {
   const parsed = z.object({
     propertyId: uuid, code: text,
     unitType: z.enum(["apartment", "studio", "house", "room", "office", "shop", "warehouse", "other"]),
@@ -63,10 +77,12 @@ export async function createUnitAction(form: FormData) {
   const photos = form.getAll("photos").filter((item): item is File => item instanceof File && item.size > 0).slice(0, 12);
   const { supabase, user, organizationId } = await context();
   await createUnit(supabase, user.id, organizationId, { ...parsed, photos });
-  finish("/logements");
+  } catch (cause) { fail("/logements/nouveau", cause); }
+  finish("/logements", "logement");
 }
 
 export async function createTenantAction(form: FormData) {
+  try {
   const fullName = text.parse(value(form, "name")).split(/\s+/);
   const parsed = z.object({
     phone: text, email: z.string().trim().email().optional(), identityNumber: optionalText,
@@ -87,10 +103,12 @@ export async function createTenantAction(form: FormData) {
     identityType: identityMap[value(form, "identityType")] ?? "other",
     documents,
   });
-  finish("/locataires");
+  } catch (cause) { fail("/locataires/nouveau", cause); }
+  finish("/locataires", "locataire");
 }
 
 export async function createLeaseAction(form: FormData) {
+  try {
   const frequencyMap: Record<string, "monthly" | "quarterly" | "semiannual" | "annual"> = {
     Mensuel: "monthly", Trimestriel: "quarterly", Semestriel: "semiannual", Annuel: "annual",
   };
@@ -105,10 +123,12 @@ export async function createLeaseAction(form: FormData) {
   });
   const { supabase, organizationId } = await context();
   await createLease(supabase, organizationId, { ...parsed, frequency: frequencyMap[value(form, "frequency")] ?? "monthly" });
-  finish("/contrats");
+  } catch (cause) { fail("/contrats/nouveau", cause); }
+  finish("/contrats", "contrat");
 }
 
 export async function recordPaymentAction(form: FormData) {
+  try {
   const parsed = z.object({
     tenantId: uuid, leaseId: uuid, amount: money, currency: z.enum(["USD", "CDF"]),
     paidAt: z.iso.datetime(), method: z.enum(["cash", "mobile_money", "bank_transfer", "bank_deposit", "other"]),
@@ -120,5 +140,6 @@ export async function recordPaymentAction(form: FormData) {
   });
   const { supabase, organizationId } = await context();
   await recordPayment(supabase, organizationId, parsed);
-  finish("/paiements");
+  } catch (cause) { fail("/paiements/nouveau", cause); }
+  finish("/paiements", "paiement");
 }

@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { DashboardChartSection } from "./dashboard-chart-section";
-import { dashboardPeriodLabels, getDashboardData, type DashboardPeriod } from "./dashboard-data";
+import { dashboardPeriodLabels, getDashboardData, type DashboardData, type DashboardPeriod } from "./dashboard-data";
 import { DashboardKpiCard } from "./dashboard-kpi-card";
 import { PeriodFilter } from "./period-filter";
 
@@ -33,6 +33,7 @@ type DashboardViewProps = {
   startDate?: string;
   endDate?: string;
   paymentBasePath: string;
+  data?: DashboardData;
 };
 
 function formatAmount(amount: number, maximumFractionDigits = 0) {
@@ -54,8 +55,7 @@ function ListHeader({ title, description, icon: Icon }: { title: string; descrip
   );
 }
 
-export function DashboardView({ displayName, period, basePath, paymentBasePath, startDate, endDate }: DashboardViewProps) {
-  const data = getDashboardData(period);
+export function DashboardView({ displayName, period, basePath, paymentBasePath, startDate, endDate, data = getDashboardData(period) }: DashboardViewProps) {
   const firstName = displayName?.trim().split(" ")[0];
   const periodHelper = period === "custom" && startDate && endDate
     ? `${startDate.split("-").reverse().join("/")} — ${endDate.split("-").reverse().join("/")}`
@@ -66,8 +66,8 @@ export function DashboardView({ displayName, period, basePath, paymentBasePath, 
       <header className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
         <div>
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <Badge className="border-brand-gold/25 bg-brand-gold/10 text-amber-800 dark:text-amber-300" variant="outline">Aperçu frontend</Badge>
-            <span className="text-xs text-muted-foreground">Données de démonstration · {periodHelper}</span>
+            <Badge className="border-brand-gold/25 bg-brand-gold/10 text-amber-800 dark:text-amber-300" variant="outline">Supabase</Badge>
+            <span className="text-xs text-muted-foreground">Données réelles actualisées · {periodHelper}</span>
           </div>
           <h1 className="font-heading text-[1.75rem] leading-tight font-semibold tracking-[-0.025em] sm:text-[2rem]">
             <span className="md:hidden">Bonjour{firstName ? ` ${firstName}` : ""}</span>

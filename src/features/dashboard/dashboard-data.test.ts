@@ -8,15 +8,12 @@ describe("dashboard data", () => {
     expect(parseDashboardPeriod("quarter")).toBe("quarter");
   });
 
-  it("keeps the KPI totals consistent with the chart points", () => {
+  it("starts empty when Supabase has no records", () => {
     const data = getDashboardData("quarter");
-    const expected = data.revenue.reduce((total, point) => total + point.expected, 0);
-    const collected = data.revenue.reduce((total, point) => total + point.collected, 0);
-
-    expect(data.revenue).toHaveLength(3);
-    expect(data.kpis.expected).toBe(expected);
-    expect(data.kpis.collected).toBe(collected);
-    expect(data.kpis.arrears).toBe(expected - collected);
-    expect(data.kpis.recovery).toBeCloseTo((collected / expected) * 100);
+    expect(data.revenue).toHaveLength(0);
+    expect(data.kpis.expected).toBe(0);
+    expect(data.kpis.collected).toBe(0);
+    expect(data.kpis.arrears).toBe(0);
+    expect(data.kpis.recovery).toBe(0);
   });
 });

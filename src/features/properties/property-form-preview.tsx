@@ -26,7 +26,7 @@ export function PropertyFormPreview({ basePath, dashboardHref, action }: { baseP
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <div><Breadcrumbs items={[{ label: "Dashboard", href: dashboardHref }, { label: "Propriétés", href: basePath }, { label: "Nouvelle propriété" }]} /><PageHeader description="Renseignez les informations générales et la structure initiale du patrimoine." eyebrow="Aperçu frontend" title="Ajouter une propriété" /></div>
+      <div><Breadcrumbs items={[{ label: "Dashboard", href: dashboardHref }, { label: "Propriétés", href: basePath }, { label: "Nouvelle propriété" }]} /><PageHeader description="Renseignez les informations générales et la structure initiale du patrimoine." eyebrow="Gestion locative" title="Ajouter une propriété" /></div>
       <Badge variant="secondary">{action ? "Enregistrement sécurisé dans Supabase" : "Prototype interactif · aucune donnée enregistrée"}</Badge>
       <form action={action} className="space-y-5" onSubmit={action ? undefined : handleSubmit}>
         <FormSection description="Identité principale visible dans tout le produit." icon={Building2} title="Informations générales">

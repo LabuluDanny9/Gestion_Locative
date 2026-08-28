@@ -8,12 +8,12 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-import { properties, units } from "./property-data";
+import type { Property, Unit } from "./property-data";
 import { UnitCard } from "./unit-card";
 
-export type UnitListParams = { q?: string; status?: string; property?: string; type?: string };
+export type UnitListParams = { q?: string; status?: string; property?: string; type?: string; creation?: string; erreur?: string };
 
-export function UnitListView({ basePath, dashboardHref, params }: { basePath: string; dashboardHref: string; params: UnitListParams }) {
+export function UnitListView({ basePath, dashboardHref, params, properties = [], units = [] }: { basePath: string; dashboardHref: string; params: UnitListParams; properties?: Property[]; units?: Unit[] }) {
   const query = params.q?.trim().toLocaleLowerCase("fr") ?? "";
   const filtered = units.filter((unit) => {
     const matchesQuery = !query || `${unit.code} ${unit.type} ${unit.propertyName}`.toLocaleLowerCase("fr").includes(query);

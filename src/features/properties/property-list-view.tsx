@@ -11,13 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
-import { properties, type Property } from "./property-data";
+import type { Property } from "./property-data";
 import { PropertyCard } from "./property-card";
 import { PropertyStatusBadge } from "./property-status-badge";
 
-export type PropertyListParams = { q?: string; status?: string; sort?: string; view?: string };
+export type PropertyListParams = { q?: string; status?: string; sort?: string; view?: string; creation?: string; erreur?: string };
 
-export function PropertyListView({ basePath, dashboardHref, params }: { basePath: string; dashboardHref: string; params: PropertyListParams }) {
+export function PropertyListView({ basePath, dashboardHref, params, properties = [] }: { basePath: string; dashboardHref: string; params: PropertyListParams; properties?: Property[] }) {
   const query = params.q?.trim().toLocaleLowerCase("fr") ?? "";
   const filtered = properties
     .filter((property) => !query || `${property.name} ${property.city} ${property.type}`.toLocaleLowerCase("fr").includes(query))
@@ -43,7 +43,7 @@ export function PropertyListView({ basePath, dashboardHref, params }: { basePath
         {[
           { label: "Propriétés", value: properties.length, icon: Building2 },
           { label: "Logements", value: totalUnits, icon: HousePlus },
-          { label: "Occupation", value: `${Math.round(properties.reduce((sum, item) => sum + item.occupied, 0) / totalUnits * 100)} %`, icon: ListFilter },
+          { label: "Occupation", value: `${totalUnits ? Math.round(properties.reduce((sum, item) => sum + item.occupied, 0) / totalUnits * 100) : 0} %`, icon: ListFilter },
           { label: "Revenu mensuel", value: `${new Intl.NumberFormat("fr-CD").format(totalRevenue)} USD`, icon: Wallet },
         ].map(({ label, value, icon: Icon }) => <Card key={label}><CardContent className="flex items-center gap-3 p-4"><span className="grid size-9 place-items-center rounded-xl bg-brand-blue/10 text-brand-blue"><Icon className="size-4.5" /></span><div><p className="text-xs text-muted-foreground">{label}</p><p className="mt-0.5 font-heading text-lg font-semibold tabular-nums">{value}</p></div></CardContent></Card>)}
       </section>

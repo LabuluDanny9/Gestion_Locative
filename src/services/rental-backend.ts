@@ -8,7 +8,7 @@ type Client = SupabaseClient<Database>;
 type Currency = Database["public"]["Enums"]["currency_code"];
 
 export async function getActiveOrganization(supabase: Client, userId: string) {
-  const { data: membership, error } = await supabase
+  const findMembership = () => supabase
     .from("organization_members")
     .select("organization_id, role")
     .eq("user_id", userId)
@@ -16,8 +16,19 @@ export async function getActiveOrganization(supabase: Client, userId: string) {
     .order("joined_at", { ascending: true })
     .limit(1)
     .maybeSingle();
+
+  let { data: membership, error } = await findMembership();
   if (error) throw error;
-  if (!membership) throw new Error("Aucune organisation active n’est associée à ce compte.");
+  if (!membership) {
+    const { error: bootstrapError } = await supabase.rpc("bootstrap_owner_organization", {
+      p_code: "AMIRANDA",
+      p_name: "AMIRANDA EMPIRE",
+    });
+    if (bootstrapError) throw bootstrapError;
+    ({ data: membership, error } = await findMembership());
+    if (error) throw error;
+  }
+  if (!membership) throw new Error("Impossible de créer l’espace AMIRANDA EMPIRE pour ce compte.");
   return membership;
 }
 
@@ -40,6 +51,7 @@ export async function createUnit(supabase: Client, userId: string, organizationI
   area?: number; rent: number; currency: Currency; status: Database["public"]["Enums"]["unit_status"];
   photos: File[];
 }) {
+  if (input.photos.reduce((total, photo) => total + photo.size, 0) > 3_145_728) throw new Error("Le total des photos dépasse 3 Mo.");
   const { data: unit, error } = await supabase.from("units").insert({
     organization_id: organizationId, property_id: input.propertyId, code: input.code,
     unit_type: input.unitType, bedrooms: input.bedrooms, living_rooms: input.livingRooms,
@@ -51,7 +63,7 @@ export async function createUnit(supabase: Client, userId: string, organizationI
   const uploaded: string[] = [];
   try {
     for (const [index, photo] of input.photos.entries()) {
-      if (!['image/jpeg', 'image/png', 'image/webp'].includes(photo.type) || photo.size > 10_485_760) {
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(photo.type) || photo.size > 3_145_728) {
         throw new Error(`Photo invalide : ${photo.name}`);
       }
       const extension = photo.name.split(".").pop()?.toLowerCase() || "jpg";
@@ -81,6 +93,7 @@ export async function createTenant(supabase: Client, userId: string, organizatio
   identityType?: Database["public"]["Enums"]["identity_document_type"];
   identityNumber?: string; previousAddress?: string; emergencyName?: string; emergencyPhone?: string; documents: File[];
 }) {
+  if (input.documents.reduce((total, document) => total + document.size, 0) > 3_145_728) throw new Error("Le total des documents dépasse 3 Mo.");
   const { data: tenantNumber, error: numberError } = await supabase.rpc("next_human_number", {
     p_organization_id: organizationId, p_entity_type: "tenant", p_prefix: "LOC",
   });
@@ -98,7 +111,7 @@ export async function createTenant(supabase: Client, userId: string, organizatio
   const uploaded: string[] = [];
   try {
     for (const document of input.documents) {
-      if (!['application/pdf', 'image/jpeg', 'image/png'].includes(document.type) || document.size > 10_485_760) {
+      if (!['application/pdf', 'image/jpeg', 'image/png'].includes(document.type) || document.size > 3_145_728) {
         throw new Error(`Document invalide : ${document.name}`);
       }
       const extension = document.name.split(".").pop()?.toLowerCase() || "bin";
