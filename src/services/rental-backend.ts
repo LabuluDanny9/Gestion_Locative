@@ -45,13 +45,11 @@ export async function createProperty(supabase: Client, organizationId: string, i
   return data.id;
 }
 
-export async function createUnit(supabase: Client, userId: string, organizationId: string, input: {
+export async function createUnit(supabase: Client, organizationId: string, input: {
   propertyId: string; code: string; unitType: Database["public"]["Enums"]["unit_type"];
   bedrooms: number; livingRooms: number; bathrooms: number; kitchens: number;
   area?: number; rent: number; currency: Currency; status: Database["public"]["Enums"]["unit_status"];
-  photos: File[];
 }) {
-  if (input.photos.reduce((total, photo) => total + photo.size, 0) > 3_145_728) throw new Error("Le total des photos dépasse 3 Mo.");
   const { data: unit, error } = await supabase.from("units").insert({
     organization_id: organizationId, property_id: input.propertyId, code: input.code,
     unit_type: input.unitType, bedrooms: input.bedrooms, living_rooms: input.livingRooms,
@@ -59,33 +57,38 @@ export async function createUnit(supabase: Client, userId: string, organizationI
     indicative_rent: input.rent, currency: input.currency, status: input.status,
   }).select("id").single();
   if (error) throw error;
+  return unit.id;
+}
 
-  const uploaded: string[] = [];
-  try {
-    for (const [index, photo] of input.photos.entries()) {
-      if (!['image/jpeg', 'image/png', 'image/webp'].includes(photo.type) || photo.size > 3_145_728) {
-        throw new Error(`Photo invalide : ${photo.name}`);
-      }
-      const extension = photo.name.split(".").pop()?.toLowerCase() || "jpg";
-      const path = `${organizationId}/units/${unit.id}/${crypto.randomUUID()}.${extension}`;
-      const { error: uploadError } = await supabase.storage.from("property-images").upload(path, photo, {
-        contentType: photo.type, upsert: false,
-      });
-      if (uploadError) throw uploadError;
-      uploaded.push(path);
-      const { error: metadataError } = await supabase.from("unit_photos").insert({
-        organization_id: organizationId, unit_id: unit.id, storage_path: path,
-        file_name: photo.name, mime_type: photo.type, file_size_bytes: photo.size,
-        sort_order: index, is_cover: index === 0, uploaded_by: userId,
-      });
-      if (metadataError) throw metadataError;
+export type UnitPhotoMetadata = {
+  storagePath: string;
+  fileName: string;
+  mimeType: "image/jpeg" | "image/png" | "image/webp";
+  fileSize: number;
+};
+
+export async function attachUnitPhotos(supabase: Client, userId: string, organizationId: string, unitId: string, photos: UnitPhotoMetadata[]) {
+  const expectedPrefix = `${organizationId}/units/${unitId}/`;
+  if (photos.length > 12) throw new Error("Maximum 12 photos par logement.");
+  for (const [index, photo] of photos.entries()) {
+    if (!photo.storagePath.startsWith(expectedPrefix) || !["image/jpeg", "image/png", "image/webp"].includes(photo.mimeType) || photo.fileSize < 1 || photo.fileSize > 6_291_456) {
+      throw new Error(`Photo invalide : ${photo.fileName}`);
     }
-    return unit.id;
-  } catch (cause) {
-    if (uploaded.length) await supabase.storage.from("property-images").remove(uploaded);
-    await supabase.from("units").delete().eq("id", unit.id).eq("organization_id", organizationId);
-    throw cause;
+    const { error } = await supabase.from("unit_photos").insert({
+      organization_id: organizationId, unit_id: unitId, storage_path: photo.storagePath,
+      file_name: photo.fileName, mime_type: photo.mimeType, file_size_bytes: photo.fileSize,
+      sort_order: index, is_cover: index === 0, uploaded_by: userId,
+    });
+    if (error) throw error;
   }
+}
+
+export async function rollbackUnitCreation(supabase: Client, organizationId: string, unitId: string, storagePaths: string[]) {
+  const expectedPrefix = `${organizationId}/units/${unitId}/`;
+  const safePaths = storagePaths.filter((path) => path.startsWith(expectedPrefix));
+  if (safePaths.length) await supabase.storage.from("property-images").remove(safePaths);
+  const { error } = await supabase.from("units").delete().eq("id", unitId).eq("organization_id", organizationId);
+  if (error) throw error;
 }
 
 export async function createTenant(supabase: Client, userId: string, organizationId: string, input: {
@@ -94,19 +97,12 @@ export async function createTenant(supabase: Client, userId: string, organizatio
   identityNumber?: string; previousAddress?: string; emergencyName?: string; emergencyPhone?: string; documents: File[];
 }) {
   if (input.documents.reduce((total, document) => total + document.size, 0) > 3_145_728) throw new Error("Le total des documents dépasse 3 Mo.");
-  const { data: tenantNumber, error: numberError } = await supabase.rpc("next_human_number", {
-    p_organization_id: organizationId, p_entity_type: "tenant", p_prefix: "LOC",
+  const { data, error } = await supabase.rpc("create_tenant_record", {
+    p_organization_id: organizationId, p_first_name: input.firstName, p_last_name: input.lastName,
+    p_phone: input.phone, p_email: input.email, p_identity_type: input.identityType,
+    p_identity_number: input.identityNumber, p_previous_address: input.previousAddress,
+    p_emergency_name: input.emergencyName, p_emergency_phone: input.emergencyPhone,
   });
-  if (numberError) throw numberError;
-  const { data, error } = await supabase.from("tenants").insert({
-    organization_id: organizationId, tenant_number: tenantNumber,
-    first_name: input.firstName, last_name: input.lastName, phone: input.phone,
-    email: input.email || null, identity_document_type: input.identityType ?? null,
-    identity_document_number: input.identityNumber || null,
-    previous_address: input.previousAddress || null,
-    emergency_contact_name: input.emergencyName || null,
-    emergency_contact_phone: input.emergencyPhone || null,
-  }).select("id").single();
   if (error) throw error;
   const uploaded: string[] = [];
   try {
@@ -115,21 +111,21 @@ export async function createTenant(supabase: Client, userId: string, organizatio
         throw new Error(`Document invalide : ${document.name}`);
       }
       const extension = document.name.split(".").pop()?.toLowerCase() || "bin";
-      const path = `${organizationId}/tenants/${data.id}/${crypto.randomUUID()}.${extension}`;
+      const path = `${organizationId}/tenants/${data}/${crypto.randomUUID()}.${extension}`;
       const { error: uploadError } = await supabase.storage.from("identity-documents").upload(path, document, { contentType: document.type, upsert: false });
       if (uploadError) throw uploadError;
       uploaded.push(path);
       const { error: metadataError } = await supabase.from("documents").insert({
-        organization_id: organizationId, tenant_id: data.id, bucket_id: "identity-documents",
+        organization_id: organizationId, tenant_id: data, bucket_id: "identity-documents",
         storage_path: path, file_name: document.name, mime_type: document.type,
         file_size_bytes: document.size, kind: "identity_document", is_sensitive: true, uploaded_by: userId,
       });
       if (metadataError) throw metadataError;
     }
-    return data.id;
+    return data;
   } catch (cause) {
     if (uploaded.length) await supabase.storage.from("identity-documents").remove(uploaded);
-    await supabase.from("tenants").delete().eq("id", data.id).eq("organization_id", organizationId);
+    await supabase.from("tenants").delete().eq("id", data).eq("organization_id", organizationId);
     throw cause;
   }
 }
