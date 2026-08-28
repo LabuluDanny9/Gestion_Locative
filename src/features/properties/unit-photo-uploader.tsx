@@ -12,8 +12,7 @@ import { Input } from "@/components/ui/input";
 type PhotoPreview = { id: string; name: string; url: string; file: File };
 
 const maxPhotos = 12;
-const maxFileSize = 3 * 1024 * 1024;
-const maxTotalSize = 3 * 1024 * 1024;
+const maxFileSize = 6 * 1024 * 1024;
 
 export function UnitPhotoUploader() {
   const [photos, setPhotos] = useState<PhotoPreview[]>([]);
@@ -25,18 +24,15 @@ export function UnitPhotoUploader() {
   function addPhotos(event: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
     const remaining = maxPhotos - photos.length;
-    let totalSize = photos.reduce((sum, photo) => sum + photo.file.size, 0);
     const validFiles = files.filter((file) => {
-      if (!file.type.startsWith("image/")) return false;
+      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+        toast.error(`${file.name} n’est pas une image JPG, PNG ou WebP.`);
+        return false;
+      }
       if (file.size > maxFileSize) {
-        toast.error(`${file.name} dépasse la limite de 3 Mo.`);
+        toast.error(`${file.name} dépasse la limite de 6 Mo.`);
         return false;
       }
-      if (totalSize + file.size > maxTotalSize) {
-        toast.error("Le total des photos ne peut pas dépasser 3 Mo par envoi.");
-        return false;
-      }
-      totalSize += file.size;
       return true;
     }).slice(0, remaining);
 
@@ -79,7 +75,7 @@ export function UnitPhotoUploader() {
       <label className="flex min-h-40 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed bg-muted/25 p-6 text-center transition-colors hover:border-brand-blue/40 hover:bg-brand-blue/5" htmlFor="unit-photos">
         <CloudUpload aria-hidden="true" className="size-8 text-brand-blue" />
         <span className="mt-3 font-medium">Ajoutez les photos de toutes les pièces</span>
-        <span className="mt-1 max-w-xl text-xs leading-5 text-muted-foreground">Salon, chambres, cuisine, salles de bain, extérieur et dépendances. JPG, PNG ou WebP · 3 Mo maximum au total · jusqu’à 12 photos.</span>
+        <span className="mt-1 max-w-xl text-xs leading-5 text-muted-foreground">Salon, chambres, cuisine, salles de bain, extérieur et dépendances. JPG, PNG ou WebP · 6 Mo maximum par photo · jusqu’à 12 photos.</span>
       </label>
       <Input accept="image/jpeg,image/png,image/webp" className="sr-only" id="unit-photos" multiple name="photos" onChange={addPhotos} ref={inputRef} type="file" />
 

@@ -1830,6 +1830,21 @@ export type Database = {
         }
         Returns: string
       }
+      create_tenant_record: {
+        Args: {
+          p_email?: string
+          p_emergency_name?: string
+          p_emergency_phone?: string
+          p_first_name: string
+          p_identity_number?: string
+          p_identity_type?: Database["public"]["Enums"]["identity_document_type"]
+          p_last_name: string
+          p_organization_id: string
+          p_phone: string
+          p_previous_address?: string
+        }
+        Returns: string
+      }
       next_human_number: {
         Args: {
           p_entity_type: string

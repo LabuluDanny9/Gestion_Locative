@@ -6,7 +6,8 @@ import { z } from "zod";
 
 import { requireUser } from "@/features/auth/server";
 import {
-  createLease, createProperty, createTenant, createUnit, getActiveOrganization, recordPayment,
+  attachUnitPhotos, createLease, createProperty, createTenant, createUnit, getActiveOrganization, recordPayment, rollbackUnitCreation,
+  type UnitPhotoMetadata,
 } from "@/services/rental-backend";
 
 const text = z.string().trim().min(1);
@@ -74,11 +75,32 @@ export async function createUnitAction(form: FormData) {
     kitchens: value(form, "kitchens"), area: value(form, "area") || undefined, rent: value(form, "rent"),
     currency: value(form, "currency"), status: value(form, "status"),
   });
-  const photos = form.getAll("photos").filter((item): item is File => item instanceof File && item.size > 0).slice(0, 12);
-  const { supabase, user, organizationId } = await context();
-  await createUnit(supabase, user.id, organizationId, { ...parsed, photos });
-  } catch (cause) { fail("/logements/nouveau", cause); }
-  finish("/logements", "logement");
+  const { supabase, organizationId } = await context();
+  const unitId = await createUnit(supabase, organizationId, parsed);
+  return { ok: true as const, unitId, organizationId };
+  } catch (cause) {
+    console.error("Échec de la création du logement", cause);
+    const message = cause instanceof z.ZodError ? "Vérifiez les champs obligatoires et leur format." : "Impossible de créer le logement.";
+    return { ok: false as const, message };
+  }
+}
+
+export async function finalizeUnitPhotosAction(unitId: string, photos: UnitPhotoMetadata[]) {
+  try {
+    const { supabase, user, organizationId } = await context();
+    await attachUnitPhotos(supabase, user.id, organizationId, uuid.parse(unitId), photos);
+    revalidatePath("/logements");
+    revalidatePath("/espace");
+    return { ok: true as const };
+  } catch (cause) {
+    console.error("Échec de l’enregistrement des photos", cause);
+    return { ok: false as const, message: cause instanceof Error ? cause.message : "Impossible d’enregistrer les photos." };
+  }
+}
+
+export async function rollbackUnitAction(unitId: string, storagePaths: string[]) {
+  const { supabase, organizationId } = await context();
+  await rollbackUnitCreation(supabase, organizationId, uuid.parse(unitId), storagePaths);
 }
 
 export async function createTenantAction(form: FormData) {
