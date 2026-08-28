@@ -13,12 +13,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
 import { ContractCard } from "./contract-card";
-import { contracts, type Contract } from "./contract-data";
+import type { Contract } from "./contract-data";
 import { ContractStatusBadge } from "./contract-status-badge";
 
-export type ContractListParams = { q?: string; status?: string };
+export type ContractListParams = { q?: string; status?: string; creation?: string; erreur?: string };
 
-export function ContractListView({ basePath, dashboardHref, params }: { basePath: string; dashboardHref: string; params: ContractListParams }) {
+export function ContractListView({ basePath, dashboardHref, params, contracts = [] }: { basePath: string; dashboardHref: string; params: ContractListParams; contracts?: Contract[] }) {
   const query = params.q?.trim().toLocaleLowerCase("fr") ?? "";
   const filtered = contracts.filter((contract) => (!query || `${contract.reference} ${contract.tenantName} ${contract.unitLabel}`.toLocaleLowerCase("fr").includes(query)) && (!params.status || params.status === "all" || contract.status === params.status));
   const monthlyRent = contracts.filter((contract) => contract.status !== "expired").reduce((sum, contract) => sum + contract.rent, 0);

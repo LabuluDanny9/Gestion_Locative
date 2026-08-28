@@ -13,12 +13,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
 import { PaymentCard } from "./payment-card";
-import { payments, type Payment } from "./payment-data";
+import type { Payment } from "./payment-data";
 import { PaymentStatusBadge } from "./payment-badges";
 
 export type ReceiptListParams = { q?: string; status?: string };
 
-export function ReceiptListView({ basePath, dashboardHref, paymentBasePath, params }: { basePath: string; dashboardHref: string; paymentBasePath: string; params: ReceiptListParams }) {
+export function ReceiptListView({ basePath, dashboardHref, paymentBasePath, params, payments = [] }: { basePath: string; dashboardHref: string; paymentBasePath: string; params: ReceiptListParams; payments?: Payment[] }) {
   const query = params.q?.trim().toLocaleLowerCase("fr") ?? "";
   const filtered = payments.filter((payment) => (!query || `${payment.receiptNumber} ${payment.tenantName} ${payment.unitLabel}`.toLocaleLowerCase("fr").includes(query)) && (!params.status || params.status === "all" || payment.status === params.status));
   const total = payments.reduce((sum, payment) => sum + payment.amount, 0);

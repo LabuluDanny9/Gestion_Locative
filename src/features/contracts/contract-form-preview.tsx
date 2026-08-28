@@ -15,8 +15,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { units } from "@/features/properties/property-data";
-import { tenants } from "@/features/tenants/tenant-data";
 import { cn } from "@/lib/utils";
 
 const steps: { label: string; icon: LucideIcon }[] = [
@@ -26,7 +24,7 @@ const steps: { label: string; icon: LucideIcon }[] = [
 type TenantOption = { id: string; name: string; phone: string };
 type UnitOption = { id: string; type: string; code: string; propertyName: string; rent: number; currency: "USD" | "CDF" };
 
-export function ContractFormPreview({ basePath, dashboardHref, action, tenantOptions = tenants, unitOptions = units }: { basePath: string; dashboardHref: string; action?: (formData: FormData) => void | Promise<void>; tenantOptions?: TenantOption[]; unitOptions?: UnitOption[] }) {
+export function ContractFormPreview({ basePath, dashboardHref, action, tenantOptions = [], unitOptions = [] }: { basePath: string; dashboardHref: string; action?: (formData: FormData) => void | Promise<void>; tenantOptions?: TenantOption[]; unitOptions?: UnitOption[] }) {
   const [step, setStep] = useState(0);
   const formRef = useRef<HTMLFormElement>(null);
 

@@ -15,7 +15,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { tenants } from "@/features/tenants/tenant-data";
 import { cn } from "@/lib/utils";
 
 const modes = [
@@ -25,9 +24,9 @@ const modes = [
   { value: "other" as const, label: "Autre", icon: WalletCards },
 ];
 
-type PaymentTenant = Pick<(typeof tenants)[number], "id" | "name" | "phone" | "unitLabel" | "rent" | "balance" | "currency" | "contractId">;
+type PaymentTenant = { id: string; name: string; phone: string; unitLabel: string; rent: number; balance: number; currency: "USD" | "CDF"; contractId: string };
 
-export function PaymentFormPreview({ basePath, dashboardHref, receiptExampleHref, defaultTenant, action, tenantOptions = tenants, idempotencyKey = "00000000-0000-4000-8000-000000000000" }: { basePath: string; dashboardHref: string; receiptExampleHref: string; defaultTenant?: string; action?: (formData: FormData) => void | Promise<void>; tenantOptions?: PaymentTenant[]; idempotencyKey?: string }) {
+export function PaymentFormPreview({ basePath, dashboardHref, receiptExampleHref, defaultTenant, action, tenantOptions = [], idempotencyKey = "00000000-0000-4000-8000-000000000000" }: { basePath: string; dashboardHref: string; receiptExampleHref: string; defaultTenant?: string; action?: (formData: FormData) => void | Promise<void>; tenantOptions?: PaymentTenant[]; idempotencyKey?: string }) {
   const [selectedId, setSelectedId] = useState(defaultTenant && tenantOptions.some((tenant) => tenant.id === defaultTenant) ? defaultTenant : "");
   const [query, setQuery] = useState("");
   const [amount, setAmount] = useState("");

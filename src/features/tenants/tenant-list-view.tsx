@@ -13,12 +13,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
 import { TenantCard } from "./tenant-card";
-import { tenants, type Tenant } from "./tenant-data";
+import type { Tenant } from "./tenant-data";
 import { TenantStatusBadge } from "./tenant-status-badge";
 
-export type TenantListParams = { q?: string; status?: string; property?: string };
+export type TenantListParams = { q?: string; status?: string; property?: string; creation?: string; erreur?: string };
 
-export function TenantListView({ basePath, dashboardHref, params }: { basePath: string; dashboardHref: string; params: TenantListParams }) {
+export function TenantListView({ basePath, dashboardHref, params, tenants = [] }: { basePath: string; dashboardHref: string; params: TenantListParams; tenants?: Tenant[] }) {
   const query = params.q?.trim().toLocaleLowerCase("fr") ?? "";
   const filtered = tenants.filter((tenant) => {
     const matchesQuery = !query || `${tenant.name} ${tenant.code} ${tenant.phone} ${tenant.unitLabel}`.toLocaleLowerCase("fr").includes(query);

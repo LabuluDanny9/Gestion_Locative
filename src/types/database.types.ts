@@ -1800,6 +1800,10 @@ export type Database = {
       }
     }
     Functions: {
+      bootstrap_owner_organization: {
+        Args: { p_code?: string; p_name?: string }
+        Returns: string
+      }
       calculate_invoice_status: {
         Args: {
           p_amount_due: number

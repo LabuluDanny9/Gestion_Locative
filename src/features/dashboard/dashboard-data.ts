@@ -9,24 +9,6 @@ export const dashboardPeriodLabels: Record<DashboardPeriod, string> = {
   custom: "Personnalisée",
 };
 
-const monthlyRevenue = [
-  { label: "Jan", expected: 12200, collected: 10850 },
-  { label: "Fév", expected: 12600, collected: 11720 },
-  { label: "Mar", expected: 12850, collected: 11460 },
-  { label: "Avr", expected: 13200, collected: 12640 },
-  { label: "Mai", expected: 13400, collected: 12180 },
-  { label: "Juin", expected: 13750, collected: 13090 },
-  { label: "Juil", expected: 14100, collected: 13280 },
-  { label: "Août", expected: 14350, collected: 12450 },
-] as const;
-
-const currentMonthRevenue = [
-  { label: "S1", expected: 3600, collected: 3180 },
-  { label: "S2", expected: 3550, collected: 3470 },
-  { label: "S3", expected: 3600, collected: 2990 },
-  { label: "S4", expected: 3600, collected: 2810 },
-] as const;
-
 export type DashboardRevenuePoint = {
   label: string;
   expected: number;
@@ -41,49 +23,40 @@ export function parseDashboardPeriod(value?: string): DashboardPeriod {
 }
 
 export function getDashboardData(period: DashboardPeriod) {
-  const revenue: DashboardRevenuePoint[] = period === "month"
-    ? [...currentMonthRevenue]
-    : [...monthlyRevenue.slice(period === "quarter" ? -3 : period === "half" || period === "custom" ? -6 : 0)];
-
-  const totals = revenue.reduce(
-    (result, point) => ({ expected: result.expected + point.expected, collected: result.collected + point.collected }),
-    { expected: 0, collected: 0 },
-  );
-  const arrears = totals.expected - totals.collected;
-  const recovery = totals.expected ? (totals.collected / totals.expected) * 100 : 0;
-
   return {
-    kpis: {
-      collected: totals.collected,
-      expected: totals.expected,
-      arrears,
-      recovery,
-      units: 45,
-      occupied: 39,
-      occupancy: 86.7,
-    },
-    revenue,
+    kpis: { collected: 0, expected: 0, arrears: 0, recovery: 0, units: 0, occupied: 0, occupancy: 0 },
+    revenue: [] as DashboardRevenuePoint[],
     unitDistribution: [
-      { name: "Occupés", value: 39, color: "#2563EB" },
-      { name: "Libres", value: 3, color: "#16A34A" },
-      { name: "Maintenance", value: 2, color: "#F59E0B" },
-      { name: "Réservés", value: 1, color: "#D4A72C" },
+      { name: "Occupés", value: 0, color: "#2563EB" }, { name: "Libres", value: 0, color: "#16A34A" },
+      { name: "Maintenance", value: 0, color: "#F59E0B" }, { name: "Réservés", value: 0, color: "#D4A72C" },
     ],
-    upcoming: [
-      { id: "due-1", tenant: "Locataire Démo 01", unit: "Appartement A03", amount: 350, timing: "Dans 2 jours" },
-      { id: "due-2", tenant: "Locataire Démo 02", unit: "Studio B07", amount: 280, timing: "Dans 3 jours" },
-      { id: "due-3", tenant: "Patrick Kalala", unit: "Maison M02", amount: 620, timing: "Dans 5 jours" },
+    upcoming: [] as { id: string; tenant: string; unit: string; amount: number; timing: string }[],
+    arrears: [] as { id: string; tenant: string; unit: string; amount: number; days: number; unpaid: string }[],
+    recentPayments: [] as { id: string; tenant: string; unit: string; amount: number; date: string; status: "paid" | "partial" }[],
+  };
+}
+
+export function createDashboardData(input: {
+  contracts: { rent: number; status: string }[];
+  payments: { receiptNumber: string; tenantName: string; unitLabel: string; amount: number; date: string; status: "paid" | "partial" | "cancelled" }[];
+  tenants: { id: string; name: string; unitLabel: string; balance: number; rent: number; nextDueDate: string }[];
+  units: { status: string }[];
+}): DashboardData {
+  const activeContracts = input.contracts.filter((contract) => ["active", "expiring"].includes(contract.status));
+  const expected = activeContracts.reduce((sum, contract) => sum + contract.rent, 0);
+  const collected = input.payments.filter((payment) => payment.status !== "cancelled").reduce((sum, payment) => sum + payment.amount, 0);
+  const arrearsAmount = input.tenants.reduce((sum, tenant) => sum + tenant.balance, 0);
+  const occupied = input.units.filter((unit) => unit.status === "occupied").length;
+  const count = (status: string) => input.units.filter((unit) => unit.status === status).length;
+  return {
+    kpis: { collected, expected, arrears: arrearsAmount, recovery: expected ? Math.min(100, collected / expected * 100) : 0, units: input.units.length, occupied, occupancy: input.units.length ? occupied / input.units.length * 100 : 0 },
+    revenue: [{ label: dashboardPeriodLabels.month, expected, collected }],
+    unitDistribution: [
+      { name: "Occupés", value: occupied, color: "#2563EB" }, { name: "Libres", value: count("available"), color: "#16A34A" },
+      { name: "Maintenance", value: count("maintenance"), color: "#F59E0B" }, { name: "Réservés", value: count("reserved"), color: "#D4A72C" },
     ],
-    arrears: [
-      { id: "late-1", tenant: "David Mbuyi", unit: "Appartement C04", amount: 600, days: 45, unpaid: "2 mois impayés" },
-      { id: "late-2", tenant: "Nadine Kanku", unit: "Studio A09", amount: 420, days: 31, unpaid: "1 mois impayé" },
-      { id: "late-3", tenant: "Alain Mukendi", unit: "Maison M05", amount: 980, days: 64, unpaid: "2 mois impayés" },
-    ],
-    recentPayments: [
-      { id: "REC-2026-00124", tenant: "Locataire Démo 01", unit: "A03", amount: 350, date: "Aujourd’hui, 10:42", status: "paid" as const },
-      { id: "REC-2026-00123", tenant: "Chantal Ilunga", unit: "B02", amount: 550, date: "Aujourd’hui, 09:18", status: "paid" as const },
-      { id: "REC-2026-00122", tenant: "Moïse Kabila", unit: "A11", amount: 200, date: "Hier, 16:05", status: "partial" as const },
-      { id: "REC-2026-00121", tenant: "Élodie Mumba", unit: "C08", amount: 410, date: "Hier, 14:26", status: "paid" as const },
-    ],
+    upcoming: input.tenants.filter((tenant) => tenant.balance <= 0 && tenant.nextDueDate !== "—").slice(0, 5).map((tenant) => ({ id: tenant.id, tenant: tenant.name, unit: tenant.unitLabel, amount: tenant.rent, timing: tenant.nextDueDate })),
+    arrears: input.tenants.filter((tenant) => tenant.balance > 0).slice(0, 5).map((tenant) => ({ id: tenant.id, tenant: tenant.name, unit: tenant.unitLabel, amount: tenant.balance, days: 0, unpaid: "Solde à recouvrer" })),
+    recentPayments: input.payments.filter((payment) => payment.status !== "cancelled").slice(0, 5).map((payment) => ({ id: payment.receiptNumber, tenant: payment.tenantName, unit: payment.unitLabel, amount: payment.amount, date: payment.date, status: payment.status === "partial" ? "partial" as const : "paid" as const })),
   };
 }

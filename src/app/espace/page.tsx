@@ -4,8 +4,10 @@ import { CheckCircle2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AccountShell } from "@/features/auth/account-shell";
 import { requireUser } from "@/features/auth/server";
-import { parseDashboardPeriod } from "@/features/dashboard/dashboard-data";
+import { createDashboardData, parseDashboardPeriod } from "@/features/dashboard/dashboard-data";
 import { DashboardView } from "@/features/dashboard/dashboard-view";
+import { getActiveOrganization } from "@/services/rental-backend";
+import { loadRentalData } from "@/services/rental-read-models";
 
 export const metadata: Metadata = { title: "Tableau de bord" };
 export const dynamic = "force-dynamic";
@@ -19,6 +21,9 @@ export default async function DashboardPage({
   const { supabase, user } = await requireUser();
   const { data: profile } = await supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle();
   const displayName = profile?.display_name ?? undefined;
+  const membership = await getActiveOrganization(supabase, user.id);
+  const rentalData = await loadRentalData(supabase, membership.organization_id);
+  const dashboardData = createDashboardData(rentalData);
 
   return (
     <AccountShell displayName={displayName} email={user.email}>
@@ -32,6 +37,7 @@ export default async function DashboardPage({
       <DashboardView
         basePath="/espace"
         displayName={displayName}
+        data={dashboardData}
         endDate={params.fin}
         period={parseDashboardPeriod(params.periode)}
         paymentBasePath="/paiements"

@@ -14,11 +14,11 @@ import { Input } from "@/components/ui/input";
 
 import { PaymentModeBadge, PaymentStatusBadge } from "./payment-badges";
 import { PaymentCard } from "./payment-card";
-import { payments, type Payment } from "./payment-data";
+import type { Payment } from "./payment-data";
 
-export type PaymentListParams = { q?: string; status?: string; mode?: string };
+export type PaymentListParams = { q?: string; status?: string; mode?: string; creation?: string; erreur?: string };
 
-export function PaymentListView({ basePath, dashboardHref, params, receiptBasePath }: { basePath: string; dashboardHref: string; params: PaymentListParams; receiptBasePath: string }) {
+export function PaymentListView({ basePath, dashboardHref, params, receiptBasePath, payments = [] }: { basePath: string; dashboardHref: string; params: PaymentListParams; receiptBasePath: string; payments?: Payment[] }) {
   const query = params.q?.trim().toLocaleLowerCase("fr") ?? "";
   const filtered = payments.filter((payment) => (!query || `${payment.reference} ${payment.tenantName} ${payment.unitLabel} ${payment.receiptNumber}`.toLocaleLowerCase("fr").includes(query)) && (!params.status || params.status === "all" || payment.status === params.status) && (!params.mode || params.mode === "all" || payment.mode === params.mode));
   const total = payments.filter((payment) => payment.status !== "cancelled").reduce((sum, payment) => sum + payment.amount, 0);

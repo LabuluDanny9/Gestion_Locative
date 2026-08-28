@@ -9,14 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import type { Property } from "./property-data";
-import { getPropertyUnits } from "./property-data";
+import type { Property, Unit } from "./property-data";
 import { PropertyStatusBadge } from "./property-status-badge";
 import { UnitCard } from "./unit-card";
 
-export function PropertyDetailView({ property, basePath, unitBasePath, dashboardHref }: { property: Property; basePath: string; unitBasePath: string; dashboardHref: string }) {
-  const propertyUnits = getPropertyUnits(property.id);
-  const occupancy = Math.round((property.occupied / property.units) * 100);
+export function PropertyDetailView({ property, basePath, unitBasePath, dashboardHref, propertyUnits = [] }: { property: Property; basePath: string; unitBasePath: string; dashboardHref: string; propertyUnits?: Unit[] }) {
+  const occupancy = property.units ? Math.round((property.occupied / property.units) * 100) : 0;
 
   return (
     <div className="space-y-6">
@@ -45,7 +43,7 @@ export function PropertyDetailView({ property, basePath, unitBasePath, dashboard
         <TabsContent className="pt-6" value="overview">
           <div className="grid gap-5 xl:grid-cols-[1.4fr_1fr]">
             <Card><CardHeader><CardTitle>À propos de la propriété</CardTitle><CardDescription>{property.address}</CardDescription></CardHeader><CardContent><p className="leading-7 text-muted-foreground">{property.description}</p><div className="mt-6 grid gap-3 sm:grid-cols-2"><div className="rounded-xl bg-muted/50 p-4"><p className="text-xs text-muted-foreground">Structure</p><p className="mt-1 font-semibold">{property.buildings} bâtiment{property.buildings > 1 ? "s" : ""} · {property.floors} niveaux</p></div><div className="rounded-xl bg-muted/50 p-4"><p className="text-xs text-muted-foreground">Disponibilité</p><p className="mt-1 font-semibold text-status-paid">{property.available} logement{property.available > 1 ? "s" : ""} libre{property.available > 1 ? "s" : ""}</p></div></div></CardContent></Card>
-            <Card><CardHeader><CardTitle>Performance locative</CardTitle><CardDescription>Indicateurs de démonstration</CardDescription></CardHeader><CardContent className="space-y-5">{[["Occupation", occupancy], ["Encaissement", 92], ["Contrats actifs", 88]].map(([label, value]) => <div key={label}><div className="mb-2 flex justify-between text-sm"><span className="text-muted-foreground">{label}</span><span className="font-semibold">{value} %</span></div><div className="h-2 rounded-full bg-muted"><div className="h-2 rounded-full bg-brand-blue" style={{ width: `${value}%` }} /></div></div>)}</CardContent></Card>
+            <Card><CardHeader><CardTitle>Occupation réelle</CardTitle><CardDescription>Calculée depuis les logements enregistrés</CardDescription></CardHeader><CardContent className="space-y-5"><div><div className="mb-2 flex justify-between text-sm"><span className="text-muted-foreground">Occupation</span><span className="font-semibold">{occupancy} %</span></div><div className="h-2 rounded-full bg-muted"><div className="h-2 rounded-full bg-brand-blue" style={{ width: `${occupancy}%` }} /></div></div></CardContent></Card>
           </div>
         </TabsContent>
         <TabsContent className="pt-6" value="units">{propertyUnits.length ? <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{propertyUnits.map((unit) => <UnitCard detailHref={`${unitBasePath}/${unit.id}`} key={unit.id} unit={unit} />)}</div> : <EmptyState description="Ajoutez le premier logement de cette propriété." icon={House} title="Aucun logement" />}</TabsContent>

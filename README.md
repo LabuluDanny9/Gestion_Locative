@@ -69,7 +69,7 @@ tests/
 
 Les migrations versionnées sont dans `supabase/migrations`. Elles créent 26 tables métier, deux vues calculées, cinq buckets privés, les contraintes d’intégrité, les index de clés étrangères et un verrou empêchant la suppression physique des écritures financières.
 
-Le fichier `supabase/seed.sql` contient uniquement un portefeuille fictif marqué `is_demo`. Son nettoyage est prévu par `supabase/seed/remove_demo_data.sql`.
+Le fichier `supabase/seed.sql` est volontairement vide : toutes les données sont créées depuis l’application authentifiée.
 
 ## Déploiement
 

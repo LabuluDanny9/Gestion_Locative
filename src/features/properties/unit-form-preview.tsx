@@ -13,12 +13,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-import { properties } from "./property-data";
 import { UnitPhotoUploader } from "./unit-photo-uploader";
 
 type PropertyOption = { id: string; name: string };
 
-export function UnitFormPreview({ basePath, dashboardHref, defaultProperty, action, propertyOptions = properties }: { basePath: string; dashboardHref: string; defaultProperty?: string; action?: (formData: FormData) => void | Promise<void>; propertyOptions?: PropertyOption[] }) {
+export function UnitFormPreview({ basePath, dashboardHref, defaultProperty, action, propertyOptions = [] }: { basePath: string; dashboardHref: string; defaultProperty?: string; action?: (formData: FormData) => void | Promise<void>; propertyOptions?: PropertyOption[] }) {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     toast.success("Aperçu du logement validé", { description: "L’enregistrement réel sera relié à Supabase après finalisation du frontend." });
@@ -26,7 +25,7 @@ export function UnitFormPreview({ basePath, dashboardHref, defaultProperty, acti
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <div><Breadcrumbs items={[{ label: "Dashboard", href: dashboardHref }, { label: "Logements", href: basePath }, { label: "Nouveau logement" }]} /><PageHeader description="Définissez le rattachement, les caractéristiques et les conditions locatives." eyebrow="Aperçu frontend" title="Ajouter un logement" /></div>
+      <div><Breadcrumbs items={[{ label: "Dashboard", href: dashboardHref }, { label: "Logements", href: basePath }, { label: "Nouveau logement" }]} /><PageHeader description="Définissez le rattachement, les caractéristiques et les conditions locatives." eyebrow="Gestion locative" title="Ajouter un logement" /></div>
       <Badge variant="secondary">{action ? "Enregistrement sécurisé dans Supabase" : "Prototype interactif · aucune donnée enregistrée"}</Badge>
       <form action={action} className="space-y-5" onSubmit={action ? undefined : handleSubmit}>
         <Card><CardHeader><CardTitle className="flex items-center gap-2"><House className="text-brand-blue" />Identification</CardTitle><CardDescription>Rattachement du logement dans le patrimoine.</CardDescription></CardHeader><CardContent className="grid gap-4 sm:grid-cols-2"><div className="space-y-2 sm:col-span-2"><Label htmlFor="unit-property">Propriété</Label><select className="h-10 w-full rounded-lg border bg-background px-3 text-sm" defaultValue={defaultProperty ?? ""} id="unit-property" name="propertyId" required><option value="">Sélectionner une propriété</option>{propertyOptions.map((property) => <option key={property.id} value={property.id}>{property.name}</option>)}</select></div><div className="space-y-2"><Label htmlFor="unit-code">Code du logement</Label><Input id="unit-code" name="code" placeholder="A03" required /></div><div className="space-y-2"><Label htmlFor="unit-type">Type</Label><select className="h-10 w-full rounded-lg border bg-background px-3 text-sm" id="unit-type" name="unitType" required><option value="apartment">Appartement</option><option value="studio">Studio</option><option value="house">Maison</option><option value="shop">Local commercial</option></select></div><div className="space-y-2"><Label htmlFor="unit-building">Bâtiment</Label><Input id="unit-building" placeholder="Bâtiment A" /></div><div className="space-y-2"><Label htmlFor="unit-floor">Étage</Label><Input id="unit-floor" placeholder="2e étage" /></div></CardContent></Card>
