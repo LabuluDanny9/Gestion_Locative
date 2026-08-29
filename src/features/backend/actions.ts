@@ -6,8 +6,8 @@ import { z } from "zod";
 
 import { requireUser } from "@/features/auth/server";
 import {
-  attachUnitPhotos, createLease, createProperty, createTenant, createUnit, getActiveOrganization, recordPayment, rollbackUnitCreation,
-  type UnitPhotoMetadata,
+  attachLeaseDocuments, attachUnitPhotos, createLease, createProperty, createTenant, createUnit, getActiveOrganization, recordPayment, rollbackLeaseCreation, rollbackUnitCreation,
+  type LeaseDocumentMetadata, type UnitPhotoMetadata,
 } from "@/services/rental-backend";
 
 const text = z.string().trim().min(1);
@@ -33,13 +33,18 @@ function finish(path: string, entity: string) {
 
 function fail(path: string, cause: unknown): never {
   console.error(`Échec de l’action ${path}`, cause);
+  redirect(`${path}?erreur=${encodeURIComponent(mutationMessage(cause))}`);
+}
+
+function mutationMessage(cause: unknown) {
   let message = "Une erreur inattendue est survenue. Réessayez.";
   if (cause instanceof z.ZodError) message = "Vérifiez les champs obligatoires et leur format.";
   else if (cause instanceof Error && cause.message.includes("Photo invalide")) message = cause.message;
   else if (cause instanceof Error && cause.message.includes("Document invalide")) message = cause.message;
   else if (cause instanceof Error && /duplicate|unique/i.test(cause.message)) message = "Une donnée avec la même référence existe déjà.";
   else if (cause instanceof Error && /permission|42501/i.test(cause.message)) message = "Votre compte ne possède pas l’autorisation requise.";
-  redirect(`${path}?erreur=${encodeURIComponent(message)}`);
+  else if (cause instanceof Error && /PGRST202|schema cache|Could not find the function/i.test(cause.message)) message = "Le service vient d’être mis à jour. Rechargez la page puis réessayez.";
+  return message;
 }
 
 export async function createPropertyAction(form: FormData) {
@@ -144,9 +149,30 @@ export async function createLeaseAction(form: FormData) {
     guarantee: value(form, "guarantee"), dueDay: value(form, "dueDay"), terms: value(form, "clauses"),
   });
   const { supabase, organizationId } = await context();
-  await createLease(supabase, organizationId, { ...parsed, frequency: frequencyMap[value(form, "frequency")] ?? "monthly" });
-  } catch (cause) { fail("/contrats/nouveau", cause); }
-  finish("/contrats", "contrat");
+  const leaseId = await createLease(supabase, organizationId, { ...parsed, frequency: frequencyMap[value(form, "frequency")] ?? "monthly" });
+  return { ok: true as const, leaseId, organizationId };
+  } catch (cause) {
+    console.error("Échec de la création du contrat", cause);
+    return { ok: false as const, message: mutationMessage(cause) };
+  }
+}
+
+export async function finalizeLeaseDocumentsAction(leaseId: string, documents: LeaseDocumentMetadata[]) {
+  try {
+    const { supabase, user, organizationId } = await context();
+    await attachLeaseDocuments(supabase, user.id, organizationId, uuid.parse(leaseId), documents);
+    revalidatePath("/contrats");
+    revalidatePath("/espace");
+    return { ok: true as const };
+  } catch (cause) {
+    console.error("Échec de l’enregistrement des documents du contrat", cause);
+    return { ok: false as const, message: mutationMessage(cause) };
+  }
+}
+
+export async function rollbackLeaseAction(leaseId: string, storagePaths: string[]) {
+  const { supabase, organizationId } = await context();
+  await rollbackLeaseCreation(supabase, organizationId, uuid.parse(leaseId), storagePaths);
 }
 
 export async function recordPaymentAction(form: FormData) {

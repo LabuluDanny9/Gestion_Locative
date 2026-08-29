@@ -67,6 +67,13 @@ export type UnitPhotoMetadata = {
   fileSize: number;
 };
 
+export type LeaseDocumentMetadata = {
+  storagePath: string;
+  fileName: string;
+  mimeType: "application/pdf" | "application/msword" | "application/vnd.openxmlformats-officedocument.wordprocessingml.document" | "image/jpeg" | "image/png";
+  fileSize: number;
+};
+
 export async function attachUnitPhotos(supabase: Client, userId: string, organizationId: string, unitId: string, photos: UnitPhotoMetadata[]) {
   const expectedPrefix = `${organizationId}/units/${unitId}/`;
   if (photos.length > 12) throw new Error("Maximum 12 photos par logement.");
@@ -143,6 +150,32 @@ export async function createLease(supabase: Client, organizationId: string, inpu
   });
   if (error) throw error;
   return data;
+}
+
+export async function attachLeaseDocuments(supabase: Client, userId: string, organizationId: string, leaseId: string, documents: LeaseDocumentMetadata[]) {
+  const expectedPrefix = `${organizationId}/leases/${leaseId}/`;
+  const allowedMimeTypes = ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "image/jpeg", "image/png"];
+  if (documents.length > 8) throw new Error("Maximum 8 documents par contrat.");
+  if (documents.reduce((total, document) => total + document.fileSize, 0) > 20_971_520) throw new Error("Le total des documents dépasse 20 Mo.");
+  for (const document of documents) {
+    if (!document.storagePath.startsWith(expectedPrefix) || !allowedMimeTypes.includes(document.mimeType) || document.fileSize < 1 || document.fileSize > 10_485_760) {
+      throw new Error(`Document invalide : ${document.fileName}`);
+    }
+    const { error } = await supabase.from("documents").insert({
+      organization_id: organizationId, lease_id: leaseId, bucket_id: "lease-documents",
+      storage_path: document.storagePath, file_name: document.fileName, mime_type: document.mimeType,
+      file_size_bytes: document.fileSize, kind: "lease_document", is_sensitive: true, uploaded_by: userId,
+    });
+    if (error) throw error;
+  }
+}
+
+export async function rollbackLeaseCreation(supabase: Client, organizationId: string, leaseId: string, storagePaths: string[]) {
+  const expectedPrefix = `${organizationId}/leases/${leaseId}/`;
+  const safePaths = storagePaths.filter((path) => path.startsWith(expectedPrefix));
+  if (safePaths.length) await supabase.storage.from("lease-documents").remove(safePaths);
+  const { error } = await supabase.rpc("rollback_lease_creation", { p_lease_id: leaseId, p_organization_id: organizationId });
+  if (error) throw error;
 }
 
 export async function generateRentInvoices(supabase: Client, organizationId: string, throughDate: string) {
