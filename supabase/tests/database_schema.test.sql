@@ -1,6 +1,6 @@
 begin;
 
-select extensions.plan(11);
+select extensions.plan(13);
 
 select extensions.has_table('public', 'organizations', 'organizations table exists');
 select extensions.has_table('public', 'payments', 'payments table exists');
@@ -33,6 +33,8 @@ select extensions.is(
   'all application storage buckets are private'
 );
 select extensions.has_table('public', 'role_permissions', 'RBAC permission matrix exists');
+select extensions.has_function('public', 'generate_rent_invoices', array['uuid', 'date'], 'rent invoice generator exists');
+select extensions.has_function('public', 'create_lease_and_invoices', array['uuid', 'uuid', 'uuid', 'date', 'date', 'numeric', 'currency_code', 'numeric', 'numeric', 'billing_frequency', 'smallint', 'text'], 'atomic lease workflow exists');
 
 select * from extensions.finish();
 rollback;
