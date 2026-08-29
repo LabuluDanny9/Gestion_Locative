@@ -1,6 +1,6 @@
 begin;
 
-select extensions.plan(13);
+select extensions.plan(15);
 
 select extensions.has_table('public', 'organizations', 'organizations table exists');
 select extensions.has_table('public', 'payments', 'payments table exists');
@@ -35,6 +35,11 @@ select extensions.is(
 select extensions.has_table('public', 'role_permissions', 'RBAC permission matrix exists');
 select extensions.has_function('public', 'generate_rent_invoices', array['uuid', 'date'], 'rent invoice generator exists');
 select extensions.has_function('public', 'create_lease_and_invoices', array['uuid', 'uuid', 'uuid', 'date', 'date', 'numeric', 'currency_code', 'numeric', 'numeric', 'billing_frequency', 'smallint', 'text'], 'atomic lease workflow exists');
+select extensions.has_function('public', 'rollback_lease_creation', array['uuid', 'uuid'], 'failed document uploads can safely roll back a new lease');
+select extensions.ok(
+  (select allowed_mime_types @> array['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg'] from storage.buckets where id = 'lease-documents'),
+  'lease document bucket accepts signed contracts and common annex formats'
+);
 
 select * from extensions.finish();
 rollback;

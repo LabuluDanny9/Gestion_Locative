@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { ProtectedAppShell } from "@/features/auth/protected-app-shell";
 import { requireUser } from "@/features/auth/server";
-import { createLeaseAction } from "@/features/backend/actions";
+import { createLeaseAction, finalizeLeaseDocumentsAction, rollbackLeaseAction } from "@/features/backend/actions";
 import { ContractFormPreview } from "@/features/contracts/contract-form-preview";
 import { getActiveOrganization } from "@/services/rental-backend";
 import { MutationFeedback } from "@/components/shared/mutation-feedback";
@@ -19,5 +19,5 @@ export default async function NewContractPage({ searchParams }: { searchParams: 
   ]);
   const tenantOptions = (tenantRows ?? []).map((tenant) => ({ id: tenant.id, name: `${tenant.first_name} ${tenant.last_name}`, phone: tenant.phone }));
   const unitOptions = (unitRows ?? []).map((unit) => ({ id: unit.id, type: unit.unit_type, code: unit.code, propertyName: unit.properties?.name ?? "Propriété", rent: unit.indicative_rent ?? 0, currency: unit.currency }));
-  return <ProtectedAppShell><MutationFeedback error={params.erreur} /><ContractFormPreview action={createLeaseAction} basePath="/contrats" dashboardHref="/espace" tenantOptions={tenantOptions} unitOptions={unitOptions} /></ProtectedAppShell>;
+  return <ProtectedAppShell><MutationFeedback error={params.erreur} /><ContractFormPreview action={createLeaseAction} basePath="/contrats" dashboardHref="/espace" finalizeDocuments={finalizeLeaseDocumentsAction} rollbackLease={rollbackLeaseAction} tenantOptions={tenantOptions} unitOptions={unitOptions} /></ProtectedAppShell>;
 }

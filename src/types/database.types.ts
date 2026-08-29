@@ -1891,6 +1891,10 @@ export type Database = {
         }
         Returns: string
       }
+      rollback_lease_creation: {
+        Args: { p_lease_id: string; p_organization_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       allocation_type: "automatic" | "manual"

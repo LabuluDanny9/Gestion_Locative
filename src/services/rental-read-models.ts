@@ -46,7 +46,7 @@ function paymentStatus(status: string): PaymentStatus {
 }
 
 export async function loadRentalData(supabase: Client, organizationId: string) {
-  const [propertyResult, unitResult, photoResult, tenantResult, leaseResult, partyResult, invoiceResult, paymentResult, receiptResult] = await Promise.all([
+  const [propertyResult, unitResult, photoResult, tenantResult, leaseResult, partyResult, invoiceResult, paymentResult, receiptResult, documentResult] = await Promise.all([
     supabase.from("properties").select("*").eq("organization_id", organizationId).is("archived_at", null).order("name"),
     supabase.from("units").select("*").eq("organization_id", organizationId).is("archived_at", null).order("code"),
     supabase.from("unit_photos").select("*").eq("organization_id", organizationId).order("sort_order"),
@@ -56,8 +56,9 @@ export async function loadRentalData(supabase: Client, organizationId: string) {
     supabase.from("rent_invoices").select("*").eq("organization_id", organizationId),
     supabase.from("payments").select("*").eq("organization_id", organizationId).order("paid_at", { ascending: false }),
     supabase.from("receipts").select("*").eq("organization_id", organizationId),
+    supabase.from("documents").select("*").eq("organization_id", organizationId).not("lease_id", "is", null).order("created_at"),
   ]);
-  for (const result of [propertyResult, unitResult, photoResult, tenantResult, leaseResult, partyResult, invoiceResult, paymentResult, receiptResult]) {
+  for (const result of [propertyResult, unitResult, photoResult, tenantResult, leaseResult, partyResult, invoiceResult, paymentResult, receiptResult, documentResult]) {
     if (result.error) throw result.error;
   }
 
@@ -70,6 +71,7 @@ export async function loadRentalData(supabase: Client, organizationId: string) {
   const invoiceRows = invoiceResult.data ?? [];
   const paymentRows = paymentResult.data ?? [];
   const receiptRows = receiptResult.data ?? [];
+  const documentRows = documentResult.data ?? [];
   const propertyById = new Map(propertyRows.map((row) => [row.id, row]));
   const unitById = new Map(unitRows.map((row) => [row.id, row]));
   const tenantById = new Map(tenantRows.map((row) => [row.id, row]));
@@ -82,6 +84,11 @@ export async function loadRentalData(supabase: Client, organizationId: string) {
   await Promise.all(photoRows.map(async (photo) => {
     const { data } = await supabase.storage.from("property-images").createSignedUrl(photo.storage_path, 3600);
     if (data?.signedUrl) signedPhotos.set(photo.id, data.signedUrl);
+  }));
+  const signedDocuments = new Map<string, string>();
+  await Promise.all(documentRows.map(async (document) => {
+    const { data } = await supabase.storage.from(document.bucket_id).createSignedUrl(document.storage_path, 3600, { download: document.file_name });
+    if (data?.signedUrl) signedDocuments.set(document.id, data.signedUrl);
   }));
 
   const properties: Property[] = propertyRows.map((row) => {
@@ -122,7 +129,9 @@ export async function loadRentalData(supabase: Client, organizationId: string) {
       unitId: lease.unit_id, unitLabel: unit ? `${unit.unit_type} ${unit.code}` : "—", propertyName: unit ? propertyById.get(unit.property_id)?.name ?? "" : "",
       startDate: formatDate(lease.start_date), endDate: formatDate(lease.end_date), rent: Number(lease.rent_amount), guarantee: Number(lease.guarantee_amount),
       currency: lease.currency as Currency, dueDay: lease.due_day, frequency: lease.frequency, status: contractStatus(lease.status, lease.end_date),
-      signedAt: lease.activated_at ? formatDate(lease.activated_at) : undefined, nextDueDate: formatDate(nextInvoice?.due_date), noticePeriod: "—", documents: [], clauses: lease.terms ? [lease.terms] : [],
+      signedAt: lease.activated_at ? formatDate(lease.activated_at) : undefined, nextDueDate: formatDate(nextInvoice?.due_date), noticePeriod: "—",
+      documents: documentRows.filter((document) => document.lease_id === lease.id).map((document) => ({ id: document.id, name: document.file_name, type: document.mime_type, url: signedDocuments.get(document.id) })),
+      clauses: lease.terms ? [lease.terms] : [],
     };
   });
 
