@@ -3,6 +3,7 @@ import {
   BadgeAlert,
   Bell,
   Building2,
+  CalendarClock,
   ChartNoAxesCombined,
   FileSignature,
   FolderOpen,
@@ -43,6 +44,7 @@ export const appNavigation: NavigationGroup[] = [
   {
     label: "Finances",
     items: [
+      { label: "Échéances", icon: CalendarClock, href: "/echeances", enabled: true },
       { label: "Paiements", icon: WalletCards, href: "/paiements", enabled: true },
       { label: "Arriérés", icon: BadgeAlert, enabled: false },
       { label: "Garanties", icon: ShieldCheck, enabled: false },

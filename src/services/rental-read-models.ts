@@ -3,6 +3,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Contract, ContractStatus } from "@/features/contracts/contract-data";
+import type { RentInvoice } from "@/features/invoices/invoice-data";
 import type { Payment, PaymentMode, PaymentStatus } from "@/features/payments/payment-data";
 import type { Property, PropertyStatus, Unit, UnitStatus } from "@/features/properties/property-data";
 import type { Tenant, TenantStatus } from "@/features/tenants/tenant-data";
@@ -155,10 +156,32 @@ export async function loadRentalData(supabase: Client, organizationId: string) {
       tenantId: payment.tenant_id, tenantName: tenant ? `${tenant.first_name} ${tenant.last_name}` : "—", unitId: payment.unit_id,
       unitLabel: unit ? `${unit.unit_type} ${unit.code}` : "—", propertyName: unit ? propertyById.get(unit.property_id)?.name ?? "" : "",
       period: monthFormatter.format(paidAt), amount: Number(payment.amount), currency: payment.currency as Currency, mode: paymentMode(payment.method),
-      date: formatDate(payment.paid_at), time: paidAt.toLocaleTimeString("fr-CD", { hour: "2-digit", minute: "2-digit" }), status: paymentStatus(payment.status),
+      date: formatDate(payment.paid_at), paidAtIso: payment.paid_at, time: paidAt.toLocaleTimeString("fr-CD", { hour: "2-digit", minute: "2-digit" }), status: paymentStatus(payment.status),
       agent: "AMIRANDA EMPIRE", balanceBefore: Number(receipt?.balance_after ?? 0) + Number(payment.amount), balanceAfter: Number(receipt?.balance_after ?? 0), allocations: [], note: payment.note ?? undefined,
     };
   });
 
-  return { properties, units, tenants, contracts, payments };
+  const today = new Date();
+  const todayUtc = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+  const invoices: RentInvoice[] = invoiceRows.toSorted((a, b) => a.due_date.localeCompare(b.due_date)).map((invoice) => {
+    const lease = leaseById.get(invoice.lease_id);
+    const party = primaryPartyByLease.get(invoice.lease_id);
+    const tenant = party ? tenantById.get(party.tenant_id) : undefined;
+    const unit = lease ? unitById.get(lease.unit_id) : undefined;
+    const dueUtc = Date.parse(`${invoice.due_date}T00:00:00Z`);
+    return {
+      id: invoice.id, reference: invoice.invoice_number, leaseId: invoice.lease_id,
+      tenantId: tenant?.id ?? "", tenantName: tenant ? `${tenant.first_name} ${tenant.last_name}` : "—",
+      unitId: unit?.id ?? "", unitLabel: unit ? `${unit.unit_type} ${unit.code}` : "—",
+      propertyName: unit ? propertyById.get(unit.property_id)?.name ?? "" : "",
+      period: `${formatDate(invoice.period_start)} – ${formatDate(invoice.period_end)}`,
+      periodStart: invoice.period_start, periodEnd: invoice.period_end,
+      dueDate: formatDate(invoice.due_date), dueDateIso: invoice.due_date,
+      amountDue: Number(invoice.amount_due), amountPaid: Number(invoice.amount_paid), balance: Number(invoice.balance ?? 0),
+      currency: invoice.currency as Currency, status: invoice.status,
+      daysLate: Number(invoice.balance ?? 0) > 0 ? Math.max(0, Math.floor((todayUtc - dueUtc) / 86_400_000)) : 0,
+    };
+  });
+
+  return { properties, units, tenants, contracts, payments, invoices };
 }
