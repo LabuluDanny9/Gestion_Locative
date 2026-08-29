@@ -6,8 +6,8 @@ import { z } from "zod";
 
 import { requireUser } from "@/features/auth/server";
 import {
-  attachLeaseDocuments, attachUnitPhotos, createLease, createProperty, createTenant, createUnit, getActiveOrganization, recordPayment, rollbackLeaseCreation, rollbackUnitCreation,
-  type LeaseDocumentMetadata, type UnitPhotoMetadata,
+  attachLeaseDocuments, attachTenantDocuments, attachUnitPhotos, createLease, createProperty, createTenant, createUnit, getActiveOrganization, recordPayment, rollbackLeaseCreation, rollbackTenantCreation, rollbackUnitCreation,
+  type LeaseDocumentMetadata, type TenantDocumentMetadata, type UnitPhotoMetadata,
 } from "@/services/rental-backend";
 
 const text = z.string().trim().min(1);
@@ -122,16 +122,35 @@ export async function createTenantAction(form: FormData) {
   const identityMap: Record<string, "passport" | "voter_card" | "driving_license" | "other"> = {
     Passeport: "passport", "Carte d’électeur": "voter_card", "Permis de conduire": "driving_license", Autre: "other",
   };
-  const documents = form.getAll("documents").filter((item): item is File => item instanceof File && item.size > 0);
-  const { supabase, user, organizationId } = await context();
+  const { supabase, organizationId } = await context();
   const firstName = fullName[0]!;
-  await createTenant(supabase, user.id, organizationId, {
+  const tenantId = await createTenant(supabase, organizationId, {
     ...parsed, firstName, lastName: fullName.slice(1).join(" ") || firstName,
     identityType: identityMap[value(form, "identityType")] ?? "other",
-    documents,
   });
-  } catch (cause) { fail("/locataires/nouveau", cause); }
-  finish("/locataires", "locataire");
+  return { ok: true as const, tenantId, organizationId };
+  } catch (cause) {
+    console.error("Échec de la création du locataire", cause);
+    return { ok: false as const, message: mutationMessage(cause) };
+  }
+}
+
+export async function finalizeTenantDocumentsAction(tenantId: string, documents: TenantDocumentMetadata[]) {
+  try {
+    const { supabase, user, organizationId } = await context();
+    await attachTenantDocuments(supabase, user.id, organizationId, uuid.parse(tenantId), documents);
+    revalidatePath("/locataires");
+    revalidatePath("/espace");
+    return { ok: true as const };
+  } catch (cause) {
+    console.error("Échec de l’enregistrement des documents du locataire", cause);
+    return { ok: false as const, message: mutationMessage(cause) };
+  }
+}
+
+export async function rollbackTenantAction(tenantId: string, storagePaths: string[]) {
+  const { supabase, organizationId } = await context();
+  await rollbackTenantCreation(supabase, organizationId, uuid.parse(tenantId), storagePaths);
 }
 
 export async function createLeaseAction(form: FormData) {
@@ -140,16 +159,16 @@ export async function createLeaseAction(form: FormData) {
     Mensuel: "monthly", Trimestriel: "quarterly", Semestriel: "semiannual", Annuel: "annual",
   };
   const parsed = z.object({
-    tenantId: uuid, unitId: uuid, startDate: z.iso.date(), endDate: z.iso.date(), rent: money,
+    tenantId: uuid, unitId: uuid, startDate: z.iso.date(), rent: money,
     currency: z.enum(["USD", "CDF"]), guarantee: z.coerce.number().nonnegative(),
     dueDay: z.coerce.number().int().min(1).max(28), terms: optionalText,
   }).parse({
     tenantId: value(form, "tenant"), unitId: value(form, "unit"), startDate: value(form, "startDate"),
-    endDate: value(form, "endDate"), rent: value(form, "rent"), currency: value(form, "currency"),
+    rent: value(form, "rent"), currency: value(form, "currency"),
     guarantee: value(form, "guarantee"), dueDay: value(form, "dueDay"), terms: value(form, "clauses"),
   });
   const { supabase, organizationId } = await context();
-  const leaseId = await createLease(supabase, organizationId, { ...parsed, frequency: frequencyMap[value(form, "frequency")] ?? "monthly" });
+  const leaseId = await createLease(supabase, organizationId, { ...parsed, endDate: null, frequency: frequencyMap[value(form, "frequency")] ?? "monthly" });
   return { ok: true as const, leaseId, organizationId };
   } catch (cause) {
     console.error("Échec de la création du contrat", cause);

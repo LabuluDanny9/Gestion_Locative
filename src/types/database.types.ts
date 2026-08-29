@@ -1818,7 +1818,7 @@ export type Database = {
           p_advance_amount?: number
           p_currency: Database["public"]["Enums"]["currency_code"]
           p_due_day?: number
-          p_end_date: string
+          p_end_date: string | null
           p_frequency?: Database["public"]["Enums"]["billing_frequency"]
           p_guarantee_amount?: number
           p_organization_id: string
@@ -1835,7 +1835,7 @@ export type Database = {
           p_advance_amount?: number
           p_currency: Database["public"]["Enums"]["currency_code"]
           p_due_day?: number
-          p_end_date: string
+          p_end_date: string | null
           p_frequency?: Database["public"]["Enums"]["billing_frequency"]
           p_guarantee_amount?: number
           p_organization_id: string

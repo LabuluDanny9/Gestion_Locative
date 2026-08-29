@@ -28,7 +28,7 @@ export function ContractListView({ basePath, dashboardHref, params, contracts = 
     { key: "tenant", header: "Locataire", render: (contract) => <div className="flex items-center gap-2"><TenantAvatar name={contract.tenantName} /><span className="font-medium">{contract.tenantName}</span></div> },
     { key: "unit", header: "Logement", render: (contract) => <div><p className="font-medium">{contract.unitLabel}</p><p className="mt-0.5 text-xs text-muted-foreground">{contract.propertyName}</p></div> },
     { key: "start", header: "Début", render: (contract) => contract.startDate },
-    { key: "end", header: "Fin", render: (contract) => contract.endDate },
+    { key: "end", header: "Durée", render: (contract) => contract.endDate },
     { key: "rent", header: "Loyer", render: (contract) => <MoneyDisplay amount={contract.rent} currency={contract.currency} /> },
     { key: "guarantee", header: "Garantie", render: (contract) => <MoneyDisplay amount={contract.guarantee} currency={contract.currency} /> },
     { key: "status", header: "Statut", render: (contract) => <ContractStatusBadge status={contract.status} /> },

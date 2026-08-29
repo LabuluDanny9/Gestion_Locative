@@ -74,6 +74,13 @@ export type LeaseDocumentMetadata = {
   fileSize: number;
 };
 
+export type TenantDocumentMetadata = {
+  storagePath: string;
+  fileName: string;
+  mimeType: "application/pdf" | "image/jpeg" | "image/png";
+  fileSize: number;
+};
+
 export async function attachUnitPhotos(supabase: Client, userId: string, organizationId: string, unitId: string, photos: UnitPhotoMetadata[]) {
   const expectedPrefix = `${organizationId}/units/${unitId}/`;
   if (photos.length > 12) throw new Error("Maximum 12 photos par logement.");
@@ -98,12 +105,11 @@ export async function rollbackUnitCreation(supabase: Client, organizationId: str
   if (error) throw error;
 }
 
-export async function createTenant(supabase: Client, userId: string, organizationId: string, input: {
+export async function createTenant(supabase: Client, organizationId: string, input: {
   firstName: string; lastName: string; phone: string; email?: string;
   identityType?: Database["public"]["Enums"]["identity_document_type"];
-  identityNumber?: string; previousAddress?: string; emergencyName?: string; emergencyPhone?: string; documents: File[];
+  identityNumber?: string; previousAddress?: string; emergencyName?: string; emergencyPhone?: string;
 }) {
-  if (input.documents.reduce((total, document) => total + document.size, 0) > 3_145_728) throw new Error("Le total des documents dépasse 3 Mo.");
   const { data, error } = await supabase.rpc("create_tenant_record", {
     p_organization_id: organizationId, p_first_name: input.firstName, p_last_name: input.lastName,
     p_phone: input.phone, p_email: input.email, p_identity_type: input.identityType,
@@ -111,34 +117,36 @@ export async function createTenant(supabase: Client, userId: string, organizatio
     p_emergency_name: input.emergencyName, p_emergency_phone: input.emergencyPhone,
   });
   if (error) throw error;
-  const uploaded: string[] = [];
-  try {
-    for (const document of input.documents) {
-      if (!['application/pdf', 'image/jpeg', 'image/png'].includes(document.type) || document.size > 3_145_728) {
-        throw new Error(`Document invalide : ${document.name}`);
-      }
-      const extension = document.name.split(".").pop()?.toLowerCase() || "bin";
-      const path = `${organizationId}/tenants/${data}/${crypto.randomUUID()}.${extension}`;
-      const { error: uploadError } = await supabase.storage.from("identity-documents").upload(path, document, { contentType: document.type, upsert: false });
-      if (uploadError) throw uploadError;
-      uploaded.push(path);
-      const { error: metadataError } = await supabase.from("documents").insert({
-        organization_id: organizationId, tenant_id: data, bucket_id: "identity-documents",
-        storage_path: path, file_name: document.name, mime_type: document.type,
-        file_size_bytes: document.size, kind: "identity_document", is_sensitive: true, uploaded_by: userId,
-      });
-      if (metadataError) throw metadataError;
+  return data;
+}
+
+export async function attachTenantDocuments(supabase: Client, userId: string, organizationId: string, tenantId: string, documents: TenantDocumentMetadata[]) {
+  const expectedPrefix = `${organizationId}/tenants/${tenantId}/`;
+  const allowedMimeTypes = ["application/pdf", "image/jpeg", "image/png"];
+  if (documents.reduce((total, document) => total + document.fileSize, 0) > 3_145_728) throw new Error("Le total des documents dépasse 3 Mo.");
+  for (const document of documents) {
+    if (!document.storagePath.startsWith(expectedPrefix) || !allowedMimeTypes.includes(document.mimeType) || document.fileSize < 1) {
+      throw new Error(`Document invalide : ${document.fileName}`);
     }
-    return data;
-  } catch (cause) {
-    if (uploaded.length) await supabase.storage.from("identity-documents").remove(uploaded);
-    await supabase.from("tenants").delete().eq("id", data).eq("organization_id", organizationId);
-    throw cause;
+    const { error } = await supabase.from("documents").insert({
+      organization_id: organizationId, tenant_id: tenantId, bucket_id: "identity-documents",
+      storage_path: document.storagePath, file_name: document.fileName, mime_type: document.mimeType,
+      file_size_bytes: document.fileSize, kind: "identity_document", is_sensitive: true, uploaded_by: userId,
+    });
+    if (error) throw error;
   }
 }
 
+export async function rollbackTenantCreation(supabase: Client, organizationId: string, tenantId: string, storagePaths: string[]) {
+  const expectedPrefix = `${organizationId}/tenants/${tenantId}/`;
+  const safePaths = storagePaths.filter((path) => path.startsWith(expectedPrefix));
+  if (safePaths.length) await supabase.storage.from("identity-documents").remove(safePaths);
+  const { error } = await supabase.from("tenants").delete().eq("id", tenantId).eq("organization_id", organizationId);
+  if (error) throw error;
+}
+
 export async function createLease(supabase: Client, organizationId: string, input: {
-  tenantId: string; unitId: string; startDate: string; endDate: string;
+  tenantId: string; unitId: string; startDate: string; endDate: string | null;
   rent: number; currency: Currency; guarantee: number;
   frequency: Database["public"]["Enums"]["billing_frequency"]; dueDay: number; terms?: string;
 }) {

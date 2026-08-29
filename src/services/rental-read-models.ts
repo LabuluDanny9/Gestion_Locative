@@ -56,7 +56,7 @@ export async function loadRentalData(supabase: Client, organizationId: string) {
     supabase.from("rent_invoices").select("*").eq("organization_id", organizationId),
     supabase.from("payments").select("*").eq("organization_id", organizationId).order("paid_at", { ascending: false }),
     supabase.from("receipts").select("*").eq("organization_id", organizationId),
-    supabase.from("documents").select("*").eq("organization_id", organizationId).not("lease_id", "is", null).order("created_at"),
+    supabase.from("documents").select("*").eq("organization_id", organizationId).order("created_at"),
   ]);
   for (const result of [propertyResult, unitResult, photoResult, tenantResult, leaseResult, partyResult, invoiceResult, paymentResult, receiptResult, documentResult]) {
     if (result.error) throw result.error;
@@ -127,7 +127,7 @@ export async function loadRentalData(supabase: Client, organizationId: string) {
     return {
       id: lease.id, reference: lease.lease_number, tenantId: tenant?.id ?? "", tenantName: tenant ? `${tenant.first_name} ${tenant.last_name}` : "—",
       unitId: lease.unit_id, unitLabel: unit ? `${unit.unit_type} ${unit.code}` : "—", propertyName: unit ? propertyById.get(unit.property_id)?.name ?? "" : "",
-      startDate: formatDate(lease.start_date), endDate: formatDate(lease.end_date), rent: Number(lease.rent_amount), guarantee: Number(lease.guarantee_amount),
+      startDate: formatDate(lease.start_date), endDate: lease.end_date ? formatDate(lease.end_date) : "Durée indéterminée", rent: Number(lease.rent_amount), guarantee: Number(lease.guarantee_amount),
       currency: lease.currency as Currency, dueDay: lease.due_day, frequency: lease.frequency, status: contractStatus(lease.status, lease.end_date),
       signedAt: lease.activated_at ? formatDate(lease.activated_at) : undefined, nextDueDate: formatDate(nextInvoice?.due_date), noticePeriod: "—",
       documents: documentRows.filter((document) => document.lease_id === lease.id).map((document) => ({ id: document.id, name: document.file_name, type: document.mime_type, url: signedDocuments.get(document.id) })),
@@ -148,10 +148,11 @@ export async function loadRentalData(supabase: Client, organizationId: string) {
       propertyId: unit?.property_id ?? "", propertyName: unit ? propertyById.get(unit.property_id)?.name ?? "" : "Sans logement",
       unitId: unit?.id ?? "", unitLabel: unit ? `${unit.unit_type} ${unit.code}` : "Non attribué", rent: Number(lease?.rent_amount ?? 0), currency: (lease?.currency ?? "USD") as Currency,
       nextDueDate: formatDate(nextInvoice?.due_date), balance, guarantee: Number(lease?.guarantee_amount ?? 0), status,
-      contractStart: formatDate(lease?.start_date), contractEnd: formatDate(lease?.end_date), contractId: lease?.id ?? "",
+      contractStart: formatDate(lease?.start_date), contractEnd: lease?.end_date ? formatDate(lease.end_date) : "Durée indéterminée", contractId: lease?.id ?? "",
       identityType: tenant.identity_document_type ?? "", identityNumber: tenant.identity_document_number ?? "", address: tenant.previous_address ?? "",
       emergencyContact: [tenant.emergency_contact_name, tenant.emergency_contact_phone].filter(Boolean).join(" · "),
       payments: tenantPayments.map((payment) => { const receipt = receiptByPayment.get(payment.id); return { id: payment.id, period: monthFormatter.format(new Date(payment.paid_at)), amount: Number(payment.amount), currency: payment.currency as Currency, paidAt: formatDate(payment.paid_at), receipt: receipt?.receipt_number ?? "—", receiptId: receipt?.id, status: payment.status === "completed" ? "paid" as const : "partial" as const }; }),
+      documents: documentRows.filter((document) => document.tenant_id === tenant.id).map((document) => ({ id: document.id, name: document.file_name, url: signedDocuments.get(document.id) })),
     };
   });
 
