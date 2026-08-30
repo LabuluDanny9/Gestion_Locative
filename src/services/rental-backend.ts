@@ -150,9 +150,9 @@ export async function createLease(supabase: Client, organizationId: string, inpu
   rent: number; currency: Currency; guarantee: number;
   frequency: Database["public"]["Enums"]["billing_frequency"]; dueDay: number; terms?: string;
 }) {
-  const { data, error } = await supabase.rpc("create_lease_and_invoices", {
+  const { data, error } = await supabase.rpc("create_open_lease_and_invoices", {
     p_organization_id: organizationId, p_tenant_id: input.tenantId, p_unit_id: input.unitId,
-    p_start_date: input.startDate, p_end_date: input.endDate, p_rent_amount: input.rent,
+    p_start_date: input.startDate, p_rent_amount: input.rent,
     p_currency: input.currency, p_guarantee_amount: input.guarantee,
     p_frequency: input.frequency, p_due_day: input.dueDay, p_terms: input.terms,
   });
@@ -200,6 +200,16 @@ export async function recordPayment(supabase: Client, organizationId: string, in
   method: Database["public"]["Enums"]["payment_method"]; reference?: string; note?: string;
   idempotencyKey: string;
 }) {
+  const { data: balances, error: balanceError } = await supabase
+    .from("rent_invoice_balances")
+    .select("balance")
+    .eq("organization_id", organizationId)
+    .eq("lease_id", input.leaseId)
+    .eq("currency", input.currency);
+  if (balanceError) throw balanceError;
+  const outstanding = (balances ?? []).reduce((total, row) => total + Number(row.balance ?? 0), 0);
+  if (input.amount > outstanding) throw new Error(`Montant supérieur au solde dû (${outstanding} ${input.currency}).`);
+
   const { data, error } = await supabase.rpc("record_rent_payment", {
     p_organization_id: organizationId, p_tenant_id: input.tenantId, p_lease_id: input.leaseId,
     p_amount: input.amount, p_currency: input.currency, p_paid_at: input.paidAt,

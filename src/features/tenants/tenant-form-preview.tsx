@@ -18,14 +18,15 @@ import type { TenantDocumentMetadata } from "@/services/rental-backend";
 
 type CreateTenantResult = { ok: true; tenantId: string; organizationId: string } | { ok: false; message: string };
 type FinalizeResult = { ok: true } | { ok: false; message: string };
+type PrepareResult = { ok: true; uploads: { path: string; token: string }[] } | { ok: false; message: string };
 
-export function TenantFormPreview({ basePath, dashboardHref, action, finalizeDocuments, rollbackTenant }: { basePath: string; dashboardHref: string; action?: (formData: FormData) => Promise<CreateTenantResult>; finalizeDocuments?: (tenantId: string, documents: TenantDocumentMetadata[]) => Promise<FinalizeResult>; rollbackTenant?: (tenantId: string, storagePaths: string[]) => Promise<void> }) {
+export function TenantFormPreview({ basePath, dashboardHref, action, finalizeDocuments, prepareUploads, rollbackTenant }: { basePath: string; dashboardHref: string; action?: (formData: FormData) => Promise<CreateTenantResult>; finalizeDocuments?: (tenantId: string, documents: TenantDocumentMetadata[]) => Promise<FinalizeResult>; prepareUploads?: (tenantId: string, documents: Omit<TenantDocumentMetadata, "storagePath">[]) => Promise<PrepareResult>; rollbackTenant?: (tenantId: string, storagePaths: string[]) => Promise<void> }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!action || !finalizeDocuments || !rollbackTenant) {
+    if (!action || !finalizeDocuments || !prepareUploads || !rollbackTenant) {
       toast.success("Aperçu du dossier locataire validé", { description: "Aucune donnée n’a été enregistrée." });
       return;
     }
@@ -48,15 +49,19 @@ export function TenantFormPreview({ basePath, dashboardHref, action, finalizeDoc
       const created = await action(formData);
       if (!created.ok) throw new Error(created.message);
       tenantId = created.tenantId;
+      const requests = files.map((file) => ({ fileName: file.name, mimeType: file.type as TenantDocumentMetadata["mimeType"], fileSize: file.size }));
+      const prepared = await prepareUploads(created.tenantId, requests);
+      if (!prepared.ok) throw new Error(prepared.message);
       const supabase = createBrowserSupabaseClient();
       const metadata: TenantDocumentMetadata[] = [];
-      for (const file of files) {
+      for (const [index, file] of files.entries()) {
         const mimeType = file.type as TenantDocumentMetadata["mimeType"];
-        const path = `${created.organizationId}/tenants/${created.tenantId}/${crypto.randomUUID()}.${extensions[mimeType]}`;
-        const { error } = await supabase.storage.from("identity-documents").upload(path, file, { contentType: mimeType, upsert: false });
+        const upload = prepared.uploads[index];
+        if (!upload) throw new Error(`Préparation incomplète : ${file.name}`);
+        const { error } = await supabase.storage.from("identity-documents").uploadToSignedUrl(upload.path, upload.token, file, { contentType: mimeType });
         if (error) throw error;
-        uploadedPaths.push(path);
-        metadata.push({ storagePath: path, fileName: file.name, mimeType, fileSize: file.size });
+        uploadedPaths.push(upload.path);
+        metadata.push({ storagePath: upload.path, fileName: file.name, mimeType, fileSize: file.size });
       }
       const finalized = await finalizeDocuments(created.tenantId, metadata);
       if (!finalized.ok) throw new Error(finalized.message);

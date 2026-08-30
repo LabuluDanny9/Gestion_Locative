@@ -46,7 +46,7 @@ function paymentStatus(status: string): PaymentStatus {
 }
 
 export async function loadRentalData(supabase: Client, organizationId: string) {
-  const [propertyResult, unitResult, photoResult, tenantResult, leaseResult, partyResult, invoiceResult, paymentResult, receiptResult, documentResult] = await Promise.all([
+  const [propertyResult, unitResult, photoResult, tenantResult, leaseResult, partyResult, invoiceResult, paymentResult, allocationResult, receiptResult, documentResult, profileResult] = await Promise.all([
     supabase.from("properties").select("*").eq("organization_id", organizationId).is("archived_at", null).order("name"),
     supabase.from("units").select("*").eq("organization_id", organizationId).is("archived_at", null).order("code"),
     supabase.from("unit_photos").select("*").eq("organization_id", organizationId).order("sort_order"),
@@ -55,10 +55,12 @@ export async function loadRentalData(supabase: Client, organizationId: string) {
     supabase.from("lease_tenants").select("*").eq("organization_id", organizationId).is("left_at", null),
     supabase.from("rent_invoices").select("*").eq("organization_id", organizationId),
     supabase.from("payments").select("*").eq("organization_id", organizationId).order("paid_at", { ascending: false }),
+    supabase.from("payment_allocations").select("*").eq("organization_id", organizationId),
     supabase.from("receipts").select("*").eq("organization_id", organizationId),
     supabase.from("documents").select("*").eq("organization_id", organizationId).order("created_at"),
+    supabase.from("profiles").select("id, display_name"),
   ]);
-  for (const result of [propertyResult, unitResult, photoResult, tenantResult, leaseResult, partyResult, invoiceResult, paymentResult, receiptResult, documentResult]) {
+  for (const result of [propertyResult, unitResult, photoResult, tenantResult, leaseResult, partyResult, invoiceResult, paymentResult, allocationResult, receiptResult, documentResult, profileResult]) {
     if (result.error) throw result.error;
   }
 
@@ -70,6 +72,7 @@ export async function loadRentalData(supabase: Client, organizationId: string) {
   const partyRows = partyResult.data ?? [];
   const invoiceRows = invoiceResult.data ?? [];
   const paymentRows = paymentResult.data ?? [];
+  const allocationRows = allocationResult.data ?? [];
   const receiptRows = receiptResult.data ?? [];
   const documentRows = documentResult.data ?? [];
   const propertyById = new Map(propertyRows.map((row) => [row.id, row]));
@@ -79,6 +82,8 @@ export async function loadRentalData(supabase: Client, organizationId: string) {
   const primaryPartyByLease = new Map(partyRows.filter((row) => row.is_primary).map((row) => [row.lease_id, row]));
   const activeLeaseByTenant = new Map(partyRows.map((party) => [party.tenant_id, leaseById.get(party.lease_id)]));
   const receiptByPayment = new Map(receiptRows.map((row) => [row.payment_id, row]));
+  const invoiceById = new Map(invoiceRows.map((row) => [row.id, row]));
+  const profileById = new Map((profileResult.data ?? []).map((row) => [row.id, row]));
 
   const signedPhotos = new Map<string, string>();
   await Promise.all(photoRows.map(async (photo) => {
@@ -167,7 +172,10 @@ export async function loadRentalData(supabase: Client, organizationId: string) {
       unitLabel: unit ? `${unit.unit_type} ${unit.code}` : "—", propertyName: unit ? propertyById.get(unit.property_id)?.name ?? "" : "",
       period: monthFormatter.format(paidAt), amount: Number(payment.amount), currency: payment.currency as Currency, mode: paymentMode(payment.method),
       date: formatDate(payment.paid_at), paidAtIso: payment.paid_at, time: paidAt.toLocaleTimeString("fr-CD", { hour: "2-digit", minute: "2-digit" }), status: paymentStatus(payment.status),
-      agent: "AMIRANDA EMPIRE", balanceBefore: Number(receipt?.balance_after ?? 0) + Number(payment.amount), balanceAfter: Number(receipt?.balance_after ?? 0), allocations: [], note: payment.note ?? undefined,
+      agent: payment.received_by ? profileById.get(payment.received_by)?.display_name ?? `Utilisateur ${payment.received_by.slice(0, 8)}` : "Non renseigné",
+      balanceBefore: Number(receipt?.balance_after ?? 0) + Number(payment.amount), balanceAfter: Number(receipt?.balance_after ?? 0),
+      allocations: allocationRows.filter((allocation) => allocation.payment_id === payment.id).map((allocation) => { const invoice = invoiceById.get(allocation.rent_invoice_id); return { period: invoice ? `${formatDate(invoice.period_start)} – ${formatDate(invoice.period_end)}` : "Échéance", amount: Number(allocation.amount) }; }),
+      note: payment.note ?? undefined,
     };
   });
 
