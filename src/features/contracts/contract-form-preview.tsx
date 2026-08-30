@@ -28,8 +28,9 @@ type TenantOption = { id: string; name: string; phone: string };
 type UnitOption = { id: string; type: string; code: string; propertyName: string; rent: number; currency: "USD" | "CDF" };
 type CreateLeaseResult = { ok: true; leaseId: string; organizationId: string } | { ok: false; message: string };
 type FinalizeResult = { ok: true } | { ok: false; message: string };
+type PrepareResult = { ok: true; uploads: { path: string; token: string }[] } | { ok: false; message: string };
 
-export function ContractFormPreview({ basePath, dashboardHref, action, finalizeDocuments, rollbackLease, tenantOptions = [], unitOptions = [] }: { basePath: string; dashboardHref: string; action?: (formData: FormData) => Promise<CreateLeaseResult>; finalizeDocuments?: (leaseId: string, documents: LeaseDocumentMetadata[]) => Promise<FinalizeResult>; rollbackLease?: (leaseId: string, storagePaths: string[]) => Promise<void>; tenantOptions?: TenantOption[]; unitOptions?: UnitOption[] }) {
+export function ContractFormPreview({ basePath, dashboardHref, action, finalizeDocuments, prepareUploads, rollbackLease, tenantOptions = [], unitOptions = [] }: { basePath: string; dashboardHref: string; action?: (formData: FormData) => Promise<CreateLeaseResult>; finalizeDocuments?: (leaseId: string, documents: LeaseDocumentMetadata[]) => Promise<FinalizeResult>; prepareUploads?: (leaseId: string, documents: Omit<LeaseDocumentMetadata, "storagePath">[]) => Promise<PrepareResult>; rollbackLease?: (leaseId: string, storagePaths: string[]) => Promise<void>; tenantOptions?: TenantOption[]; unitOptions?: UnitOption[] }) {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,7 +46,7 @@ export function ContractFormPreview({ basePath, dashboardHref, action, finalizeD
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!action || !finalizeDocuments || !rollbackLease) {
+    if (!action || !finalizeDocuments || !prepareUploads || !rollbackLease) {
       toast.success("Aperçu du contrat validé", { description: "Aucune donnée n’a été enregistrée pendant cette phase frontend." });
       return;
     }
@@ -54,11 +55,6 @@ export function ContractFormPreview({ basePath, dashboardHref, action, finalizeD
     const files = formData.getAll("documents").filter((item): item is File => item instanceof File && item.size > 0);
     formData.delete("documents");
     const allowedMimeTypes: LeaseDocumentMetadata["mimeType"][] = ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "image/jpeg", "image/png"];
-    const extensions: Record<LeaseDocumentMetadata["mimeType"], string> = {
-      "application/pdf": "pdf", "application/msword": "doc",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
-      "image/jpeg": "jpg", "image/png": "png",
-    };
     let leaseId: string | undefined;
     const uploadedPaths: string[] = [];
     const toastId = toast.loading("Création du contrat et envoi des documents…");
@@ -72,15 +68,19 @@ export function ContractFormPreview({ basePath, dashboardHref, action, finalizeD
       const created = await action(formData);
       if (!created.ok) throw new Error(created.message);
       leaseId = created.leaseId;
+      const requests = files.map((file) => ({ fileName: file.name, mimeType: file.type as LeaseDocumentMetadata["mimeType"], fileSize: file.size }));
+      const prepared = await prepareUploads(created.leaseId, requests);
+      if (!prepared.ok) throw new Error(prepared.message);
       const supabase = createBrowserSupabaseClient();
       const metadata: LeaseDocumentMetadata[] = [];
-      for (const file of files) {
+      for (const [index, file] of files.entries()) {
         const mimeType = file.type as LeaseDocumentMetadata["mimeType"];
-        const path = `${created.organizationId}/leases/${created.leaseId}/${crypto.randomUUID()}.${extensions[mimeType]}`;
-        const { error } = await supabase.storage.from("lease-documents").upload(path, file, { contentType: mimeType, upsert: false });
+        const upload = prepared.uploads[index];
+        if (!upload) throw new Error(`Préparation incomplète : ${file.name}`);
+        const { error } = await supabase.storage.from("lease-documents").uploadToSignedUrl(upload.path, upload.token, file, { contentType: mimeType });
         if (error) throw error;
-        uploadedPaths.push(path);
-        metadata.push({ storagePath: path, fileName: file.name, mimeType, fileSize: file.size });
+        uploadedPaths.push(upload.path);
+        metadata.push({ storagePath: upload.path, fileName: file.name, mimeType, fileSize: file.size });
       }
       const finalized = await finalizeDocuments(created.leaseId, metadata);
       if (!finalized.ok) throw new Error(finalized.message);

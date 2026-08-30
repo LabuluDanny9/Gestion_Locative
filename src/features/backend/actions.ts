@@ -41,6 +41,7 @@ function mutationMessage(cause: unknown) {
   if (cause instanceof z.ZodError) message = "Vérifiez les champs obligatoires et leur format.";
   else if (cause instanceof Error && cause.message.includes("Photo invalide")) message = cause.message;
   else if (cause instanceof Error && cause.message.includes("Document invalide")) message = cause.message;
+  else if (cause instanceof Error && cause.message.includes("Montant supérieur")) message = cause.message;
   else if (cause instanceof Error && /duplicate|unique/i.test(cause.message)) message = "Une donnée avec la même référence existe déjà.";
   else if (cause instanceof Error && /permission|42501/i.test(cause.message)) message = "Votre compte ne possède pas l’autorisation requise.";
   else if (cause instanceof Error && /PGRST202|schema cache|Could not find the function/i.test(cause.message)) message = "Le service vient d’être mis à jour. Rechargez la page puis réessayez.";
@@ -148,6 +149,27 @@ export async function finalizeTenantDocumentsAction(tenantId: string, documents:
   }
 }
 
+export async function prepareTenantDocumentUploadsAction(tenantId: string, documents: Omit<TenantDocumentMetadata, "storagePath">[]) {
+  try {
+    const { supabase, organizationId } = await context();
+    const parsedTenantId = uuid.parse(tenantId);
+    if (documents.reduce((total, document) => total + document.fileSize, 0) > 3_145_728) throw new Error("Le total des documents dépasse 3 Mo.");
+    const extensions: Record<TenantDocumentMetadata["mimeType"], string> = { "application/pdf": "pdf", "image/jpeg": "jpg", "image/png": "png" };
+    const uploads = [];
+    for (const document of documents) {
+      if (!(document.mimeType in extensions) || document.fileSize < 1) throw new Error(`Document invalide : ${document.fileName}`);
+      const path = `${organizationId}/tenants/${parsedTenantId}/${crypto.randomUUID()}.${extensions[document.mimeType]}`;
+      const { data, error } = await supabase.storage.from("identity-documents").createSignedUploadUrl(path);
+      if (error) throw error;
+      uploads.push({ path: data.path, token: data.token });
+    }
+    return { ok: true as const, uploads };
+  } catch (cause) {
+    console.error("Échec de la préparation des documents du locataire", cause);
+    return { ok: false as const, message: mutationMessage(cause) };
+  }
+}
+
 export async function rollbackTenantAction(tenantId: string, storagePaths: string[]) {
   const { supabase, organizationId } = await context();
   await rollbackTenantCreation(supabase, organizationId, uuid.parse(tenantId), storagePaths);
@@ -189,6 +211,32 @@ export async function finalizeLeaseDocumentsAction(leaseId: string, documents: L
   }
 }
 
+export async function prepareLeaseDocumentUploadsAction(leaseId: string, documents: Omit<LeaseDocumentMetadata, "storagePath">[]) {
+  try {
+    const { supabase, organizationId } = await context();
+    const parsedLeaseId = uuid.parse(leaseId);
+    const extensions: Record<LeaseDocumentMetadata["mimeType"], string> = {
+      "application/pdf": "pdf", "application/msword": "doc",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+      "image/jpeg": "jpg", "image/png": "png",
+    };
+    if (documents.length > 8) throw new Error("Maximum 8 documents par contrat.");
+    if (documents.reduce((total, document) => total + document.fileSize, 0) > 20_971_520) throw new Error("Le total des documents dépasse 20 Mo.");
+    const uploads = [];
+    for (const document of documents) {
+      if (!(document.mimeType in extensions) || document.fileSize < 1 || document.fileSize > 10_485_760) throw new Error(`Document invalide : ${document.fileName}`);
+      const path = `${organizationId}/leases/${parsedLeaseId}/${crypto.randomUUID()}.${extensions[document.mimeType]}`;
+      const { data, error } = await supabase.storage.from("lease-documents").createSignedUploadUrl(path);
+      if (error) throw error;
+      uploads.push({ path: data.path, token: data.token });
+    }
+    return { ok: true as const, uploads };
+  } catch (cause) {
+    console.error("Échec de la préparation des documents du contrat", cause);
+    return { ok: false as const, message: mutationMessage(cause) };
+  }
+}
+
 export async function rollbackLeaseAction(leaseId: string, storagePaths: string[]) {
   const { supabase, organizationId } = await context();
   await rollbackLeaseCreation(supabase, organizationId, uuid.parse(leaseId), storagePaths);
@@ -198,15 +246,15 @@ export async function recordPaymentAction(form: FormData) {
   try {
   const parsed = z.object({
     tenantId: uuid, leaseId: uuid, amount: money, currency: z.enum(["USD", "CDF"]),
-    paidAt: z.iso.datetime(), method: z.enum(["cash", "mobile_money", "bank_transfer", "bank_deposit", "other"]),
+    method: z.enum(["cash", "mobile_money", "bank_transfer", "bank_deposit", "other"]),
     reference: optionalText, note: optionalText, idempotencyKey: uuid,
   }).parse({
     tenantId: value(form, "tenantId"), leaseId: value(form, "leaseId"), amount: value(form, "amount"),
-    currency: value(form, "currency"), paidAt: value(form, "paidAt"), method: value(form, "method"),
+    currency: value(form, "currency"), method: value(form, "method"),
     reference: value(form, "reference"), note: value(form, "note"), idempotencyKey: value(form, "idempotencyKey"),
   });
   const { supabase, organizationId } = await context();
-  await recordPayment(supabase, organizationId, parsed);
+  await recordPayment(supabase, organizationId, { ...parsed, paidAt: new Date().toISOString() });
   } catch (cause) { fail("/paiements/nouveau", cause); }
   finish("/paiements", "paiement");
 }

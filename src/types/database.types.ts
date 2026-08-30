@@ -1847,6 +1847,22 @@ export type Database = {
         }
         Returns: string
       }
+      create_open_lease_and_invoices: {
+        Args: {
+          p_advance_amount?: number
+          p_currency: Database["public"]["Enums"]["currency_code"]
+          p_due_day?: number
+          p_frequency?: Database["public"]["Enums"]["billing_frequency"]
+          p_guarantee_amount?: number
+          p_organization_id: string
+          p_rent_amount: number
+          p_start_date: string
+          p_tenant_id: string
+          p_terms?: string
+          p_unit_id: string
+        }
+        Returns: string
+      }
       create_tenant_record: {
         Args: {
           p_email?: string
