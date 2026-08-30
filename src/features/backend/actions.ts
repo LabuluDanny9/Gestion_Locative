@@ -6,7 +6,7 @@ import { z } from "zod";
 
 import { requireUser } from "@/features/auth/server";
 import {
-  attachLeaseDocuments, attachTenantDocuments, attachUnitPhotos, createLease, createProperty, createTenant, createUnit, getActiveOrganization, recordPayment, rollbackLeaseCreation, rollbackTenantCreation, rollbackUnitCreation,
+  attachLeaseDocuments, attachTenantDocuments, attachUnitPhotos, createLease, createProperty, createTenant, createUnit, getActiveOrganization, recordPayment, reversePayment, rollbackLeaseCreation, rollbackTenantCreation, rollbackUnitCreation,
   type LeaseDocumentMetadata, type TenantDocumentMetadata, type UnitPhotoMetadata,
 } from "@/services/rental-backend";
 
@@ -257,4 +257,24 @@ export async function recordPaymentAction(form: FormData) {
   await recordPayment(supabase, organizationId, { ...parsed, paidAt: new Date().toISOString() });
   } catch (cause) { fail("/paiements/nouveau", cause); }
   finish("/paiements", "paiement");
+}
+
+export async function reversePaymentAction(form: FormData) {
+  const paymentId = value(form, "paymentId");
+  const path = `/paiements/${encodeURIComponent(paymentId)}`;
+  try {
+    const parsed = z.object({
+      paymentId: uuid,
+      reason: z.string().trim().min(5).max(500),
+    }).parse({ paymentId, reason: value(form, "reason") });
+    const { supabase, organizationId } = await context();
+    await reversePayment(supabase, organizationId, parsed.paymentId, parsed.reason);
+  } catch (cause) {
+    fail(path, cause);
+  }
+  revalidatePath("/paiements");
+  revalidatePath("/recus");
+  revalidatePath("/echeances");
+  revalidatePath("/espace");
+  redirect(`${path}?annulation=paiement`);
 }

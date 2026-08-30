@@ -41,12 +41,12 @@ function paymentMode(method: string): PaymentMode {
   return "card";
 }
 
-function paymentStatus(status: string): PaymentStatus {
-  return status === "cancelled" || status === "reversed" ? "cancelled" : status === "partial" ? "partial" : "paid";
+function paymentStatus(status: string, balanceAfter: number): PaymentStatus {
+  return status === "cancelled" || status === "reversed" ? "cancelled" : balanceAfter > 0 ? "partial" : "paid";
 }
 
 export async function loadRentalData(supabase: Client, organizationId: string) {
-  const [propertyResult, unitResult, photoResult, tenantResult, leaseResult, partyResult, invoiceResult, paymentResult, allocationResult, receiptResult, documentResult, profileResult] = await Promise.all([
+  const [propertyResult, unitResult, photoResult, tenantResult, leaseResult, partyResult, invoiceResult, paymentResult, allocationResult, reversalResult, receiptResult, documentResult, profileResult] = await Promise.all([
     supabase.from("properties").select("*").eq("organization_id", organizationId).is("archived_at", null).order("name"),
     supabase.from("units").select("*").eq("organization_id", organizationId).is("archived_at", null).order("code"),
     supabase.from("unit_photos").select("*").eq("organization_id", organizationId).order("sort_order"),
@@ -56,11 +56,12 @@ export async function loadRentalData(supabase: Client, organizationId: string) {
     supabase.from("rent_invoices").select("*").eq("organization_id", organizationId),
     supabase.from("payments").select("*").eq("organization_id", organizationId).order("paid_at", { ascending: false }),
     supabase.from("payment_allocations").select("*").eq("organization_id", organizationId),
+    supabase.from("payment_reversals").select("*").eq("organization_id", organizationId),
     supabase.from("receipts").select("*").eq("organization_id", organizationId),
     supabase.from("documents").select("*").eq("organization_id", organizationId).order("created_at"),
     supabase.from("profiles").select("id, display_name"),
   ]);
-  for (const result of [propertyResult, unitResult, photoResult, tenantResult, leaseResult, partyResult, invoiceResult, paymentResult, allocationResult, receiptResult, documentResult, profileResult]) {
+  for (const result of [propertyResult, unitResult, photoResult, tenantResult, leaseResult, partyResult, invoiceResult, paymentResult, allocationResult, reversalResult, receiptResult, documentResult, profileResult]) {
     if (result.error) throw result.error;
   }
 
@@ -73,6 +74,7 @@ export async function loadRentalData(supabase: Client, organizationId: string) {
   const invoiceRows = invoiceResult.data ?? [];
   const paymentRows = paymentResult.data ?? [];
   const allocationRows = allocationResult.data ?? [];
+  const reversalByPayment = new Map((reversalResult.data ?? []).map((row) => [row.payment_id, row]));
   const receiptRows = receiptResult.data ?? [];
   const documentRows = documentResult.data ?? [];
   const propertyById = new Map(propertyRows.map((row) => [row.id, row]));
@@ -165,17 +167,21 @@ export async function loadRentalData(supabase: Client, organizationId: string) {
     const tenant = tenantById.get(payment.tenant_id);
     const unit = unitById.get(payment.unit_id);
     const receipt = receiptByPayment.get(payment.id);
+    const reversal = reversalByPayment.get(payment.id);
     const paidAt = new Date(payment.paid_at);
     return {
       id: payment.id, reference: payment.payment_number, receiptId: receipt?.id ?? payment.id, receiptNumber: receipt?.receipt_number ?? "Reçu en attente",
       tenantId: payment.tenant_id, tenantName: tenant ? `${tenant.first_name} ${tenant.last_name}` : "—", unitId: payment.unit_id,
       unitLabel: unit ? `${unit.unit_type} ${unit.code}` : "—", propertyName: unit ? propertyById.get(unit.property_id)?.name ?? "" : "",
       period: monthFormatter.format(paidAt), amount: Number(payment.amount), currency: payment.currency as Currency, mode: paymentMode(payment.method),
-      date: formatDate(payment.paid_at), paidAtIso: payment.paid_at, time: paidAt.toLocaleTimeString("fr-CD", { hour: "2-digit", minute: "2-digit" }), status: paymentStatus(payment.status),
+      date: formatDate(payment.paid_at), paidAtIso: payment.paid_at, time: paidAt.toLocaleTimeString("fr-CD", { hour: "2-digit", minute: "2-digit" }), status: paymentStatus(payment.status, Number(receipt?.balance_after ?? 0)),
       agent: payment.received_by ? profileById.get(payment.received_by)?.display_name ?? `Utilisateur ${payment.received_by.slice(0, 8)}` : "Non renseigné",
       balanceBefore: Number(receipt?.balance_after ?? 0) + Number(payment.amount), balanceAfter: Number(receipt?.balance_after ?? 0),
       allocations: allocationRows.filter((allocation) => allocation.payment_id === payment.id).map((allocation) => { const invoice = invoiceById.get(allocation.rent_invoice_id); return { period: invoice ? `${formatDate(invoice.period_start)} – ${formatDate(invoice.period_end)}` : "Échéance", amount: Number(allocation.amount) }; }),
       note: payment.note ?? undefined,
+      reversalReason: reversal?.reason,
+      reversedAt: reversal ? formatDate(reversal.reversed_at) : undefined,
+      reversedBy: reversal ? profileById.get(reversal.reversed_by)?.display_name ?? `Utilisateur ${reversal.reversed_by.slice(0, 8)}` : undefined,
     };
   });
 

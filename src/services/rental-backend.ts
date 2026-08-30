@@ -219,3 +219,13 @@ export async function recordPayment(supabase: Client, organizationId: string, in
   if (error) throw error;
   return data;
 }
+
+export async function reversePayment(supabase: Client, organizationId: string, paymentId: string, reason: string) {
+  const { data, error } = await supabase.rpc("reverse_rent_payment", {
+    p_organization_id: organizationId,
+    p_payment_id: paymentId,
+    p_reason: reason,
+  });
+  if (error) throw error;
+  return data;
+}

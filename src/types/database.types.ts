@@ -1907,6 +1907,14 @@ export type Database = {
         }
         Returns: string
       }
+      reverse_rent_payment: {
+        Args: {
+          p_organization_id: string
+          p_payment_id: string
+          p_reason: string
+        }
+        Returns: string
+      }
       rollback_lease_creation: {
         Args: { p_lease_id: string; p_organization_id: string }
         Returns: undefined
