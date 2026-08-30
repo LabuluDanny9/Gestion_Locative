@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireUser } from "@/features/auth/server";
+import { mutationMessage } from "@/features/backend/mutation-errors";
 import {
   attachLeaseDocuments, attachTenantDocuments, attachUnitPhotos, createLease, createProperty, createTenant, createUnit, getActiveOrganization, recordPayment, reversePayment, rollbackLeaseCreation, rollbackTenantCreation, rollbackUnitCreation,
   type LeaseDocumentMetadata, type TenantDocumentMetadata, type UnitPhotoMetadata,
@@ -34,18 +35,6 @@ function finish(path: string, entity: string) {
 function fail(path: string, cause: unknown): never {
   console.error(`Échec de l’action ${path}`, cause);
   redirect(`${path}?erreur=${encodeURIComponent(mutationMessage(cause))}`);
-}
-
-function mutationMessage(cause: unknown) {
-  let message = "Une erreur inattendue est survenue. Réessayez.";
-  if (cause instanceof z.ZodError) message = "Vérifiez les champs obligatoires et leur format.";
-  else if (cause instanceof Error && cause.message.includes("Photo invalide")) message = cause.message;
-  else if (cause instanceof Error && cause.message.includes("Document invalide")) message = cause.message;
-  else if (cause instanceof Error && cause.message.includes("Montant supérieur")) message = cause.message;
-  else if (cause instanceof Error && /duplicate|unique/i.test(cause.message)) message = "Une donnée avec la même référence existe déjà.";
-  else if (cause instanceof Error && /permission|42501/i.test(cause.message)) message = "Votre compte ne possède pas l’autorisation requise.";
-  else if (cause instanceof Error && /PGRST202|schema cache|Could not find the function/i.test(cause.message)) message = "Le service vient d’être mis à jour. Rechargez la page puis réessayez.";
-  return message;
 }
 
 export async function createPropertyAction(form: FormData) {
