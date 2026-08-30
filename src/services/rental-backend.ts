@@ -150,11 +150,13 @@ export async function createLease(supabase: Client, organizationId: string, inpu
   rent: number; currency: Currency; guarantee: number;
   frequency: Database["public"]["Enums"]["billing_frequency"]; dueDay: number; terms?: string;
 }) {
-  const { data, error } = await supabase.rpc("create_open_lease_and_invoices", {
-    p_organization_id: organizationId, p_tenant_id: input.tenantId, p_unit_id: input.unitId,
-    p_start_date: input.startDate, p_rent_amount: input.rent,
-    p_currency: input.currency, p_guarantee_amount: input.guarantee,
-    p_frequency: input.frequency, p_due_day: input.dueDay, p_terms: input.terms,
+  const { data, error } = await supabase.rpc("create_open_lease_from_payload", {
+    p_payload: {
+      organization_id: organizationId, tenant_id: input.tenantId, unit_id: input.unitId,
+      start_date: input.startDate, rent_amount: input.rent,
+      currency: input.currency, guarantee_amount: input.guarantee,
+      frequency: input.frequency, due_day: input.dueDay, terms: input.terms ?? null,
+    },
   });
   if (error) throw error;
   return data;

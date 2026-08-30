@@ -1863,6 +1863,10 @@ export type Database = {
         }
         Returns: string
       }
+      create_open_lease_from_payload: {
+        Args: { p_payload: Json }
+        Returns: string
+      }
       create_tenant_record: {
         Args: {
           p_email?: string
