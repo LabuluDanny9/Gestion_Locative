@@ -2,6 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { buildLeaseCreationRpc, type LeaseCreationInput } from "@/services/lease-creation";
 import type { Database } from "@/types/database.types";
 
 type Client = SupabaseClient<Database>;
@@ -145,20 +146,27 @@ export async function rollbackTenantCreation(supabase: Client, organizationId: s
   if (error) throw error;
 }
 
-export async function createLease(supabase: Client, organizationId: string, input: {
-  tenantId: string; unitId: string; startDate: string; endDate: string | null;
-  rent: number; currency: Currency; guarantee: number;
-  frequency: Database["public"]["Enums"]["billing_frequency"]; dueDay: number; terms?: string;
-}) {
-  const { data, error } = await supabase.rpc("create_open_lease_from_payload", {
-    p_payload: {
-      organization_id: organizationId, tenant_id: input.tenantId, unit_id: input.unitId,
-      start_date: input.startDate, rent_amount: input.rent,
-      currency: input.currency, guarantee_amount: input.guarantee,
-      frequency: input.frequency, due_day: input.dueDay, terms: input.terms ?? null,
-    },
-  });
+export async function createLease(supabase: Client, organizationId: string, input: LeaseCreationInput) {
+  const { data, error } = await supabase.rpc("create_lease_with_tenant", buildLeaseCreationRpc(organizationId, input));
   if (error) throw error;
+
+  // Invoice generation must not prevent the already-created lease and its
+  // documents from completing when PostgREST refreshes a secondary RPC late.
+  const currentThroughDate = new Date();
+  currentThroughDate.setUTCDate(currentThroughDate.getUTCDate() + 45);
+  const startThroughDate = new Date(`${input.startDate}T00:00:00Z`);
+  startThroughDate.setUTCDate(startThroughDate.getUTCDate() + 45);
+  const maximumThroughDate = new Date();
+  maximumThroughDate.setUTCDate(maximumThroughDate.getUTCDate() + 366);
+  const throughDate = new Date(Math.min(
+    Math.max(currentThroughDate.getTime(), startThroughDate.getTime()),
+    maximumThroughDate.getTime(),
+  ));
+  const { error: invoiceError } = await supabase.rpc("generate_rent_invoices", {
+    p_organization_id: organizationId,
+    p_through_date: throughDate.toISOString().slice(0, 10),
+  });
+  if (invoiceError) console.error("Échec de la génération initiale des échéances", invoiceError);
   return data;
 }
 
