@@ -2,10 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { z } from "zod";
 
 import { requireUser } from "@/features/auth/server";
 import { mutationMessage } from "@/features/backend/mutation-errors";
+import { deliverPaymentNotification } from "@/services/notifications/payment-notification";
 import {
   attachLeaseDocuments, attachTenantDocuments, attachUnitPhotos, createLease, createProperty, createTenant, createUnit, getActiveOrganization, recordPayment, reversePayment, rollbackLeaseCreation, rollbackTenantCreation, rollbackUnitCreation,
   type LeaseDocumentMetadata, type TenantDocumentMetadata, type UnitPhotoMetadata,
@@ -243,7 +245,31 @@ export async function recordPaymentAction(form: FormData) {
     reference: value(form, "reference"), note: value(form, "note"), idempotencyKey: value(form, "idempotencyKey"),
   });
   const { supabase, organizationId } = await context();
-  await recordPayment(supabase, organizationId, { ...parsed, paidAt: new Date().toISOString() });
+  const payment = await recordPayment(supabase, organizationId, { ...parsed, paidAt: new Date().toISOString() });
+  const { data: tenant, error: tenantError } = await supabase.from("tenants")
+    .select("first_name, last_name, phone, whatsapp_phone")
+    .eq("organization_id", organizationId).eq("id", parsed.tenantId).single();
+  if (tenantError) {
+    console.error("Paiement enregistré mais coordonnées du locataire indisponibles", tenantError);
+  } else {
+    after(async () => {
+      try {
+        await deliverPaymentNotification({
+          organizationId,
+          tenantId: parsed.tenantId,
+          tenantName: `${tenant.first_name} ${tenant.last_name}`.trim(),
+          phone: tenant.phone,
+          whatsappPhone: tenant.whatsapp_phone,
+          paymentId: payment.paymentId,
+          amount: parsed.amount,
+          currency: parsed.currency,
+          partial: parsed.amount < payment.outstandingBefore,
+        }, supabase);
+      } catch (cause) {
+        console.error("Paiement enregistré mais notification non créée", cause);
+      }
+    });
+  }
   } catch (cause) { fail("/paiements/nouveau", cause); }
   finish("/paiements", "paiement");
 }

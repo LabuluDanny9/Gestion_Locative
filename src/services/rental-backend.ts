@@ -227,7 +227,8 @@ export async function recordPayment(supabase: Client, organizationId: string, in
     p_note: input.note, p_idempotency_key: input.idempotencyKey,
   });
   if (error) throw error;
-  return data;
+  if (!data) throw new Error("Le paiement a été enregistré sans identifiant exploitable.");
+  return { paymentId: data, outstandingBefore: outstanding };
 }
 
 export async function reversePayment(supabase: Client, organizationId: string, paymentId: string, reason: string) {

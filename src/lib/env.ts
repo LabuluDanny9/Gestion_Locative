@@ -18,6 +18,21 @@ export const serverEnvSchema = z.object({
   SUPABASE_SECRET_KEY: optionalSecret,
   APP_TIMEZONE: z.string().min(1).default("Africa/Lubumbashi"),
   DEFAULT_CURRENCY: z.enum(["USD", "CDF"]).default("USD"),
+  DEFAULT_PHONE_COUNTRY_CODE: z.string().regex(/^\d{1,4}$/).default("243"),
+  TEXTBEE_API_KEY: optionalSecret,
+  TEXTBEE_DEVICE_ID: optionalSecret,
+  TEXTBEE_SIM_SUBSCRIPTION_ID: z.preprocess(
+    (value) => (value === "" || value === undefined ? undefined : Number(value)),
+    z.number().int().nonnegative().optional(),
+  ),
+  WHATSAPP_ACCESS_TOKEN: optionalSecret,
+  WHATSAPP_PHONE_NUMBER_ID: optionalSecret,
+  WHATSAPP_GRAPH_API_VERSION: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.string().regex(/^v\d+\.\d+$/).optional(),
+  ),
+  WHATSAPP_PAYMENT_TEMPLATE_NAME: optionalSecret,
+  WHATSAPP_TEMPLATE_LANGUAGE: z.string().min(2).default("fr"),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

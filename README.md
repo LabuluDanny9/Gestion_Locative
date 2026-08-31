@@ -74,3 +74,9 @@ Le fichier `supabase/seed.sql` est volontairement vide : toutes les données son
 ## Déploiement
 
 Le dépôt cible est [LabuluDanny9/Gestion_Locative](https://github.com/LabuluDanny9/Gestion_Locative). Le projet Vercel devra être lié localement avant tout déploiement ou synchronisation de variables d’environnement.
+
+## Notifications externes
+
+Après un paiement réel, l’application crée une notification Supabase puis tente WhatsApp Cloud API avec un modèle Meta approuvé. En cas d’échec, elle utilise TextBee comme canal SMS de secours. Chaque tentative est conservée dans `notification_logs` avec son fournisseur, son destinataire, son statut et l’identifiant retourné par l’API.
+
+Les secrets `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `TEXTBEE_API_KEY` et `SUPABASE_SECRET_KEY` doivent être ajoutés dans les variables de production Vercel. Le modèle WhatsApp configuré par `WHATSAPP_PAYMENT_TEMPLATE_NAME` doit accepter, dans cet ordre, le nom du locataire, le montant et la devise.
