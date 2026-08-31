@@ -53,6 +53,7 @@ type AppShellProps = {
   displayName?: string;
   preview?: boolean;
   previewHomeHref?: string;
+  unreadNotifications?: number;
 };
 
 function getInitials(displayName?: string, email?: string) {
@@ -175,22 +176,23 @@ function SidebarNavigation({ pathname, collapsed, forceLabels = false, onNavigat
   );
 }
 
-function NotificationMenu() {
+function NotificationMenu({ unreadCount = 0, preview = false }: { unreadCount?: number; preview?: boolean }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button aria-label="Ouvrir les notifications" className="relative" size="icon" variant="ghost">
           <Bell aria-hidden="true" />
-          <span className="absolute top-1.5 right-1.5 size-1.5 rounded-full bg-brand-blue ring-2 ring-background" />
+          {unreadCount > 0 && <span className="absolute -top-0.5 -right-0.5 grid min-w-4.5 place-items-center rounded-full bg-brand-blue px-1 text-[0.65rem] font-semibold text-white ring-2 ring-background">{unreadCount > 99 ? "99+" : unreadCount}</span>}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80 p-2">
         <DropdownMenuLabel className="px-2 py-2 text-sm text-foreground">Notifications</DropdownMenuLabel>
-        <div className="rounded-lg border border-dashed bg-muted/30 px-5 py-7 text-center">
+        <div className="rounded-lg border border-dashed bg-muted/30 px-5 py-6 text-center">
           <Bell aria-hidden="true" className="mx-auto size-5 text-muted-foreground" />
-          <p className="mt-3 text-sm font-medium">Tout est calme</p>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">Les alertes métier apparaîtront ici lorsque les modules seront activés.</p>
+          <p className="mt-3 text-sm font-medium">{unreadCount > 0 ? `${unreadCount} notification${unreadCount > 1 ? "s" : ""} non lue${unreadCount > 1 ? "s" : ""}` : "Aucune notification non lue"}</p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">Consultez l’historique complet des alertes enregistrées.</p>
         </div>
+        {!preview && <DropdownMenuItem asChild className="mt-2"><Link className="justify-center" href="/notifications">Voir toutes les notifications</Link></DropdownMenuItem>}
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -273,7 +275,7 @@ function HelpMenu() {
   );
 }
 
-export function AppShell({ children, email, displayName, preview = false, previewHomeHref = "/design-system/shell" }: AppShellProps) {
+export function AppShell({ children, email, displayName, preview = false, previewHomeHref = "/design-system/shell", unreadNotifications = 0 }: AppShellProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -351,7 +353,7 @@ export function AppShell({ children, email, displayName, preview = false, previe
 
           <div className="ml-auto flex items-center gap-0.5 sm:gap-1">
             <CreateMenu preview={preview} />
-            <NotificationMenu />
+            <NotificationMenu preview={preview} unreadCount={unreadNotifications} />
             <HelpMenu />
             <ThemeToggle />
             <UserMenu displayName={displayName} email={email} preview={preview} />
