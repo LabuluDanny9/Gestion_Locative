@@ -14,4 +14,9 @@ describe("mutationMessage", () => {
     expect(mutationMessage({ code: "42501", message: "Insufficient permission" }))
       .toBe("Votre compte ne possède pas l’autorisation requise.");
   });
+
+  it("explains why a referenced tenant cannot be deleted", () => {
+    expect(mutationMessage({ code: "23503", message: "violates foreign key constraint" }))
+      .toBe("Ce locataire possède encore un contrat, un paiement ou une intervention liée. Supprimez ou clôturez d’abord ces éléments.");
+  });
 });

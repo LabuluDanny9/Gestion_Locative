@@ -16,7 +16,7 @@ import { TenantCard } from "./tenant-card";
 import type { Tenant } from "./tenant-data";
 import { TenantStatusBadge } from "./tenant-status-badge";
 
-export type TenantListParams = { q?: string; status?: string; property?: string; creation?: string; erreur?: string };
+export type TenantListParams = { q?: string; status?: string; property?: string; creation?: string; suppression?: string; erreur?: string };
 
 export function TenantListView({ basePath, dashboardHref, params, tenants = [] }: { basePath: string; dashboardHref: string; params: TenantListParams; tenants?: Tenant[] }) {
   const query = params.q?.trim().toLocaleLowerCase("fr") ?? "";

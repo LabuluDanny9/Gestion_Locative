@@ -15,5 +15,6 @@ export default async function TenantsPage({ searchParams }: { searchParams: Prom
   const { supabase, user } = await requireUser();
   const membership = await getActiveOrganization(supabase, user.id);
   const { tenants } = await loadRentalData(supabase, membership.organization_id);
-  return <ProtectedAppShell><MutationFeedback error={params.erreur} success={params.creation ? "Le locataire a été créé dans Supabase." : undefined} /><TenantListView basePath="/locataires" dashboardHref="/espace" params={params} tenants={tenants} /></ProtectedAppShell>;
+  const success = params.creation ? "Le locataire a été créé dans Supabase." : params.suppression ? "Le locataire et ses documents privés ont été supprimés." : undefined;
+  return <ProtectedAppShell><MutationFeedback error={params.erreur} success={success} /><TenantListView basePath="/locataires" dashboardHref="/espace" params={params} tenants={tenants} /></ProtectedAppShell>;
 }

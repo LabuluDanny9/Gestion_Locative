@@ -19,5 +19,5 @@ export default async function PaymentDetailPage({ params, searchParams }: { para
   const { payments } = await loadRentalData(supabase, membership.organization_id);
   const payment = payments.find((item) => item.id === id);
   if (!payment) notFound();
-  return <ProtectedAppShell><MutationFeedback error={feedback.erreur} success={feedback.annulation ? "Le paiement a été annulé, les échéances restaurées et le reçu invalidé." : undefined} /><PaymentDetailView basePath="/paiements" dashboardHref="/espace" payment={payment} receiptBasePath="/recus" reverseAction={reversePaymentAction} tenantBasePath="/locataires" unitBasePath="/logements" /></ProtectedAppShell>;
+  return <ProtectedAppShell><MutationFeedback error={feedback.erreur} success={feedback.annulation ? "Le paiement a été supprimé comptablement, les échéances restaurées et le reçu invalidé." : undefined} /><PaymentDetailView basePath="/paiements" dashboardHref="/espace" payment={payment} receiptBasePath="/recus" reverseAction={reversePaymentAction} tenantBasePath="/locataires" unitBasePath="/logements" /></ProtectedAppShell>;
 }

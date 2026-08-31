@@ -146,6 +146,36 @@ export async function rollbackTenantCreation(supabase: Client, organizationId: s
   if (error) throw error;
 }
 
+export async function deleteTenant(supabase: Client, organizationId: string, tenantId: string) {
+  const { data: documents, error: documentsError } = await supabase
+    .from("documents")
+    .select("bucket_id, storage_path")
+    .eq("organization_id", organizationId)
+    .eq("tenant_id", tenantId);
+  if (documentsError) throw documentsError;
+
+  const { data: deleted, error } = await supabase
+    .from("tenants")
+    .delete()
+    .eq("organization_id", organizationId)
+    .eq("id", tenantId)
+    .select("id")
+    .maybeSingle();
+  if (error) throw error;
+  if (!deleted) throw new Error("Tenant deletion was not authorized or the tenant no longer exists.");
+
+  const pathsByBucket = new Map<string, string[]>();
+  for (const document of documents ?? []) {
+    const expectedPrefix = `${organizationId}/tenants/${tenantId}/`;
+    if (!document.storage_path.startsWith(expectedPrefix)) continue;
+    pathsByBucket.set(document.bucket_id, [...(pathsByBucket.get(document.bucket_id) ?? []), document.storage_path]);
+  }
+  await Promise.all([...pathsByBucket].map(async ([bucket, paths]) => {
+    const { error: storageError } = await supabase.storage.from(bucket).remove(paths);
+    if (storageError) console.error("Le locataire a été supprimé mais certains fichiers privés n’ont pas pu être nettoyés", storageError);
+  }));
+}
+
 export async function createLease(supabase: Client, organizationId: string, input: LeaseCreationInput) {
   const { data, error } = await supabase.rpc("create_lease_with_tenant", buildLeaseCreationRpc(organizationId, input));
   if (error) throw error;

@@ -9,7 +9,7 @@ import { requireUser } from "@/features/auth/server";
 import { mutationMessage } from "@/features/backend/mutation-errors";
 import { deliverPaymentNotification } from "@/services/notifications/payment-notification";
 import {
-  attachLeaseDocuments, attachTenantDocuments, attachUnitPhotos, createLease, createProperty, createTenant, createUnit, getActiveOrganization, recordPayment, reversePayment, rollbackLeaseCreation, rollbackTenantCreation, rollbackUnitCreation,
+  attachLeaseDocuments, attachTenantDocuments, attachUnitPhotos, createLease, createProperty, createTenant, createUnit, deleteTenant, getActiveOrganization, recordPayment, reversePayment, rollbackLeaseCreation, rollbackTenantCreation, rollbackUnitCreation,
   type LeaseDocumentMetadata, type TenantDocumentMetadata, type UnitPhotoMetadata,
 } from "@/services/rental-backend";
 
@@ -125,6 +125,21 @@ export async function createTenantAction(form: FormData) {
     console.error("Échec de la création du locataire", cause);
     return { ok: false as const, message: mutationMessage(cause) };
   }
+}
+
+export async function deleteTenantAction(form: FormData) {
+  const tenantId = value(form, "tenantId");
+  const path = `/locataires/${encodeURIComponent(tenantId)}`;
+  try {
+    const parsedTenantId = uuid.parse(tenantId);
+    const { supabase, organizationId } = await context();
+    await deleteTenant(supabase, organizationId, parsedTenantId);
+  } catch (cause) {
+    fail(path, cause);
+  }
+  revalidatePath("/locataires");
+  revalidatePath("/espace");
+  redirect("/locataires?suppression=locataire");
 }
 
 export async function finalizeTenantDocumentsAction(tenantId: string, documents: TenantDocumentMetadata[]) {
