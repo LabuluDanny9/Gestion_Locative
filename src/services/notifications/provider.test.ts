@@ -35,4 +35,16 @@ describe("fournisseurs de notifications", () => {
     await expect(provider.send({ recipient: "+243970000000", body: "Paiement reçu", templateParameters: ["Danny", "100", "USD"] })).resolves.toEqual({ providerMessageId: "wamid.1" });
     expect(fetcher).toHaveBeenCalledWith("https://graph.facebook.com/v23.0/123/messages", expect.objectContaining({ method: "POST" }));
   });
+
+  it("permet un modèle WhatsApp dédié à la messagerie manuelle", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({ messages: [{ id: "wamid.2" }] }), { status: 200 }));
+    const provider = new WhatsAppCloudProvider(parseServerEnv({
+      DEFAULT_PHONE_COUNTRY_CODE: "243", WHATSAPP_ACCESS_TOKEN: "token", WHATSAPP_PHONE_NUMBER_ID: "123",
+      WHATSAPP_GRAPH_API_VERSION: "v23.0", WHATSAPP_TEMPLATE_LANGUAGE: "fr",
+    }), fetcher);
+    await provider.send({ recipient: "+243970000000", body: "Rappel", templateName: "message_locataire", templateParameters: ["Danny", "Rappel"] });
+    expect(fetcher).toHaveBeenCalledWith("https://graph.facebook.com/v23.0/123/messages", expect.objectContaining({
+      body: expect.stringContaining('"name":"message_locataire"'),
+    }));
+  });
 });

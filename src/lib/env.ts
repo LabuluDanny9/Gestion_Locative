@@ -32,6 +32,7 @@ export const serverEnvSchema = z.object({
     z.string().regex(/^v\d+\.\d+$/).optional(),
   ),
   WHATSAPP_PAYMENT_TEMPLATE_NAME: optionalSecret,
+  WHATSAPP_MESSAGE_TEMPLATE_NAME: optionalSecret,
   WHATSAPP_TEMPLATE_LANGUAGE: z.string().min(2).default("fr"),
 });
 

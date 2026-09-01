@@ -14,13 +14,13 @@ export class WhatsAppCloudProvider implements NotificationProvider {
     return Boolean(
       this.environment.WHATSAPP_ACCESS_TOKEN
       && this.environment.WHATSAPP_PHONE_NUMBER_ID
-      && this.environment.WHATSAPP_GRAPH_API_VERSION
-      && this.environment.WHATSAPP_PAYMENT_TEMPLATE_NAME,
+      && this.environment.WHATSAPP_GRAPH_API_VERSION,
     );
   }
 
   async send(message: NotificationMessage) {
-    const { WHATSAPP_ACCESS_TOKEN: token, WHATSAPP_PHONE_NUMBER_ID: phoneId, WHATSAPP_GRAPH_API_VERSION: version, WHATSAPP_PAYMENT_TEMPLATE_NAME: template } = this.environment;
+    const { WHATSAPP_ACCESS_TOKEN: token, WHATSAPP_PHONE_NUMBER_ID: phoneId, WHATSAPP_GRAPH_API_VERSION: version } = this.environment;
+    const template = message.templateName ?? this.environment.WHATSAPP_PAYMENT_TEMPLATE_NAME;
     if (!token || !phoneId || !version || !template) throw new NotificationProviderError("WhatsApp Cloud API n’est pas configuré.");
     const response = await this.fetcher(`https://graph.facebook.com/${version}/${phoneId}/messages`, {
       method: "POST",

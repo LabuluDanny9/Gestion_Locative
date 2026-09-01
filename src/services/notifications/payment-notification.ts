@@ -62,7 +62,7 @@ export async function deliverPaymentNotification(input: PaymentNotificationInput
         body,
         templateParameters: [input.tenantName, amount, input.currency],
       });
-      const { error } = await supabase.from("notification_logs").update({ provider_message_id: result.providerMessageId }).eq("id", log.id);
+      const { error } = await supabase.from("notification_logs").update({ status: "sent", sent_at: new Date().toISOString(), provider_message_id: result.providerMessageId }).eq("id", log.id);
       if (error) throw error;
       return;
     } catch (cause) {

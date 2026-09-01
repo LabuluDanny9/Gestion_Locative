@@ -46,7 +46,7 @@ export const appNavigation: NavigationGroup[] = [
     items: [
       { label: "Échéances", icon: CalendarClock, href: "/echeances", enabled: true },
       { label: "Paiements", icon: WalletCards, href: "/paiements", enabled: true },
-      { label: "Arriérés", icon: BadgeAlert, enabled: false },
+      { label: "Arriérés", icon: BadgeAlert, href: "/arrieres", enabled: true },
       { label: "Garanties", icon: ShieldCheck, enabled: false },
       { label: "Reçus", icon: ReceiptText, href: "/recus", enabled: true },
     ],

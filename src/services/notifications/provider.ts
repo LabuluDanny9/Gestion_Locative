@@ -5,6 +5,7 @@ export type ProviderChannel = "sms" | "whatsapp";
 export type NotificationMessage = {
   recipient: string;
   body: string;
+  templateName?: string;
   templateParameters?: string[];
 };
 
