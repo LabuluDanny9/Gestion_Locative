@@ -6,8 +6,7 @@ import { parseServerEnv } from "@/lib/env";
 import type { Database } from "@/types/database.types";
 
 import { normalizePhoneNumber, type NotificationProvider, type ProviderChannel } from "./provider";
-import { TextBeeSmsProvider } from "./textbee-sms-provider";
-import { WhatsAppCloudProvider } from "./whatsapp-cloud-provider";
+import { manualWhatsAppProvider, smsProvider } from "./provider-selection";
 
 type Client = SupabaseClient<Database>;
 
@@ -20,8 +19,8 @@ export async function sendTenantMessage(supabase: Client, organizationId: string
 
   const tenantName = `${tenant.first_name} ${tenant.last_name}`.trim();
   const provider: NotificationProvider = input.channel === "whatsapp"
-    ? new WhatsAppCloudProvider(environment)
-    : new TextBeeSmsProvider(environment);
+    ? manualWhatsAppProvider(environment)
+    : smsProvider(environment);
   const recipient = input.channel === "whatsapp" ? tenant.whatsapp_phone ?? tenant.phone : tenant.phone;
   const normalizedRecipient = normalizePhoneNumber(recipient, environment.DEFAULT_PHONE_COUNTRY_CODE);
   const { data: notification, error: notificationError } = await supabase.from("notifications").insert({
@@ -46,11 +45,14 @@ export async function sendTenantMessage(supabase: Client, organizationId: string
 
   try {
     if (!provider.isConfigured()) throw new Error(`${provider.name} n’est pas configuré dans Vercel.`);
-    if (input.channel === "whatsapp" && !environment.WHATSAPP_MESSAGE_TEMPLATE_NAME) throw new Error("WhatsApp : le modèle de messagerie manuelle n’est pas configuré dans Vercel.");
+    const templateName = provider.name === "infobip_whatsapp"
+      ? environment.INFOBIP_WHATSAPP_MESSAGE_TEMPLATE_NAME
+      : environment.WHATSAPP_MESSAGE_TEMPLATE_NAME;
+    if (input.channel === "whatsapp" && !templateName) throw new Error("WhatsApp : le modèle de messagerie manuelle n’est pas configuré dans Vercel.");
     const result = await provider.send({
       recipient,
       body: input.body,
-      templateName: input.channel === "whatsapp" ? environment.WHATSAPP_MESSAGE_TEMPLATE_NAME : undefined,
+      templateName: input.channel === "whatsapp" ? templateName : undefined,
       templateParameters: input.channel === "whatsapp" ? [tenantName, input.body] : undefined,
     });
     const { error } = await supabase.from("notification_logs").update({

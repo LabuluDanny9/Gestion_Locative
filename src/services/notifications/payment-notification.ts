@@ -7,8 +7,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database.types";
 
 import { normalizePhoneNumber, type NotificationProvider } from "./provider";
-import { TextBeeSmsProvider } from "./textbee-sms-provider";
-import { WhatsAppCloudProvider } from "./whatsapp-cloud-provider";
+import { paymentWhatsAppProvider, smsProvider } from "./provider-selection";
 
 type PaymentNotificationInput = {
   organizationId: string;
@@ -41,8 +40,8 @@ export async function deliverPaymentNotification(input: PaymentNotificationInput
   if (notificationError) throw notificationError;
 
   const candidates: Array<{ provider: NotificationProvider; recipient: string }> = [];
-  if (input.whatsappPhone) candidates.push({ provider: new WhatsAppCloudProvider(environment), recipient: input.whatsappPhone });
-  candidates.push({ provider: new TextBeeSmsProvider(environment), recipient: input.phone });
+  if (input.whatsappPhone) candidates.push({ provider: paymentWhatsAppProvider(environment), recipient: input.whatsappPhone });
+  candidates.push({ provider: smsProvider(environment), recipient: input.phone });
 
   for (const { provider, recipient } of candidates) {
     const normalizedRecipient = normalizePhoneNumber(recipient, environment.DEFAULT_PHONE_COUNTRY_CODE);

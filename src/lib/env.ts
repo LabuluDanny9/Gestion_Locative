@@ -25,6 +25,13 @@ export const serverEnvSchema = z.object({
     (value) => (value === "" || value === undefined ? undefined : Number(value)),
     z.number().int().nonnegative().optional(),
   ),
+  INFOBIP_API_KEY: optionalSecret,
+  INFOBIP_BASE_URL: optionalSecret,
+  INFOBIP_SMS_SENDER: optionalSecret,
+  INFOBIP_WHATSAPP_SENDER: optionalSecret,
+  INFOBIP_WHATSAPP_MESSAGE_TEMPLATE_NAME: optionalSecret,
+  INFOBIP_WHATSAPP_PAYMENT_TEMPLATE_NAME: optionalSecret,
+  INFOBIP_WHATSAPP_TEMPLATE_LANGUAGE: z.string().min(2).default("fr"),
   WHATSAPP_ACCESS_TOKEN: optionalSecret,
   WHATSAPP_PHONE_NUMBER_ID: optionalSecret,
   WHATSAPP_GRAPH_API_VERSION: z.preprocess(

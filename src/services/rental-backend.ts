@@ -240,15 +240,27 @@ export async function recordPayment(supabase: Client, organizationId: string, in
   method: Database["public"]["Enums"]["payment_method"]; reference?: string; note?: string;
   idempotencyKey: string;
 }) {
-  const { data: balances, error: balanceError } = await supabase
-    .from("rent_invoice_balances")
-    .select("balance")
-    .eq("organization_id", organizationId)
-    .eq("lease_id", input.leaseId)
-    .eq("currency", input.currency);
-  if (balanceError) throw balanceError;
-  const outstanding = (balances ?? []).reduce((total, row) => total + Number(row.balance ?? 0), 0);
-  if (input.amount > outstanding) throw new Error(`Montant supérieur au solde dû (${outstanding} ${input.currency}).`);
+  const loadOutstanding = async () => {
+    const { data: balances, error: balanceError } = await supabase
+      .from("rent_invoice_balances")
+      .select("balance")
+      .eq("organization_id", organizationId)
+      .eq("lease_id", input.leaseId)
+      .eq("currency", input.currency);
+    if (balanceError) throw balanceError;
+    return (balances ?? []).reduce((total, row) => total + Number(row.balance ?? 0), 0);
+  };
+
+  let outstanding = await loadOutstanding();
+  if (input.amount > outstanding + 0.005) {
+    const throughDate = new Date();
+    throughDate.setUTCDate(throughDate.getUTCDate() + 366);
+    await generateRentInvoices(supabase, organizationId, throughDate.toISOString().slice(0, 10));
+    outstanding = await loadOutstanding();
+  }
+  if (input.amount > outstanding + 0.005) {
+    throw new Error(`Ce montant dépasse les échéances contractuelles disponibles (${outstanding} ${input.currency}).`);
+  }
 
   const { data, error } = await supabase.rpc("record_rent_payment", {
     p_organization_id: organizationId, p_tenant_id: input.tenantId, p_lease_id: input.leaseId,

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { parseServerEnv } from "@/lib/env";
 
+import { InfobipSmsProvider, InfobipWhatsAppProvider } from "./infobip-provider";
 import { normalizePhoneNumber } from "./provider";
 import { TextBeeSmsProvider } from "./textbee-sms-provider";
 import { WhatsAppCloudProvider } from "./whatsapp-cloud-provider";
@@ -19,6 +20,30 @@ describe("fournisseurs de notifications", () => {
     expect(fetcher).toHaveBeenCalledWith("https://api.textbee.dev/api/v1/gateway/send-sms", expect.objectContaining({
       method: "POST",
       body: JSON.stringify({ message: "Paiement reçu", recipients: ["+243970000000"] }),
+    }));
+  });
+
+  it("respecte le contrat HTTP Infobip SMS", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({ messages: [{ messageId: "sms-1" }] }), { status: 200 }));
+    const provider = new InfobipSmsProvider(parseServerEnv({
+      DEFAULT_PHONE_COUNTRY_CODE: "243", INFOBIP_API_KEY: "secret", INFOBIP_BASE_URL: "tenant.api.infobip.com", INFOBIP_SMS_SENDER: "ServiceSMS",
+    }), fetcher);
+    await expect(provider.send({ recipient: "0970000000", body: "Rappel" })).resolves.toEqual({ providerMessageId: "sms-1" });
+    expect(fetcher).toHaveBeenCalledWith("https://tenant.api.infobip.com/sms/3/messages", expect.objectContaining({
+      method: "POST", body: expect.stringContaining('"sender":"ServiceSMS"'),
+    }));
+  });
+
+  it("respecte le contrat HTTP Infobip WhatsApp", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({ messages: [{ messageId: "wa-1" }] }), { status: 200 }));
+    const environment = parseServerEnv({
+      DEFAULT_PHONE_COUNTRY_CODE: "243", INFOBIP_API_KEY: "secret", INFOBIP_BASE_URL: "https://tenant.api.infobip.com",
+      INFOBIP_WHATSAPP_SENDER: "+243970000001", INFOBIP_WHATSAPP_TEMPLATE_LANGUAGE: "fr",
+    });
+    const provider = new InfobipWhatsAppProvider(environment, "message_locataire", fetcher);
+    await expect(provider.send({ recipient: "+243970000000", body: "Rappel", templateParameters: ["Danny", "Rappel"] })).resolves.toEqual({ providerMessageId: "wa-1" });
+    expect(fetcher).toHaveBeenCalledWith("https://tenant.api.infobip.com/whatsapp/1/message/template", expect.objectContaining({
+      method: "POST", body: expect.stringContaining('"templateName":"message_locataire"'),
     }));
   });
 
