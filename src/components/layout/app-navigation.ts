@@ -54,7 +54,7 @@ export const appNavigation: NavigationGroup[] = [
   {
     label: "Analyse",
     items: [
-      { label: "Rapports", icon: ChartNoAxesCombined, enabled: false },
+      { label: "Rapports", icon: ChartNoAxesCombined, href: "/rapports", enabled: true },
       { label: "Notifications", icon: Bell, href: "/notifications", enabled: true },
     ],
   },

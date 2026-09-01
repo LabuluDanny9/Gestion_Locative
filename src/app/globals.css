@@ -62,11 +62,14 @@
   }
 
   .receipt-print-area,
-  .receipt-print-area * {
+  .receipt-print-area *,
+  .report-print-area,
+  .report-print-area * {
     visibility: visible;
   }
 
-  .receipt-print-area {
+  .receipt-print-area,
+  .report-print-area {
     position: absolute;
     inset: 0;
     width: 100%;
