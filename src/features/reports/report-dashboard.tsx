@@ -1,4 +1,4 @@
-import { BadgeAlert, Building2, CalendarRange, CircleDollarSign, Percent, ReceiptText, Users } from "lucide-react";
+import { BadgeAlert, Building2, CalendarRange, CircleDollarSign, Percent, ReceiptText } from "lucide-react";
 
 import { EmptyState } from "@/components/shared/empty-state";
 import { MoneyDisplay } from "@/components/shared/money-display";

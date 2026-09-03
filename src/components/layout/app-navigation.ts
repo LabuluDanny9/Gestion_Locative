@@ -61,7 +61,7 @@ export const appNavigation: NavigationGroup[] = [
   {
     label: "Système",
     items: [
-      { label: "Documents", icon: FolderOpen, enabled: false },
+      { label: "Documents", icon: FolderOpen, href: "/documents", enabled: true },
       { label: "Maintenance", icon: Wrench, enabled: false },
       { label: "Utilisateurs", icon: UsersRound, enabled: false },
       { label: "Paramètres", icon: Settings, href: "/profil", enabled: true },
